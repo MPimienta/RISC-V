@@ -1,0 +1,19 @@
+# Archivos temporales y logs de Vivado
+*.jou
+*.log
+*.str
+*.pb
+*.wdb
+*.wcfg
+
+# Carpetas de compilación y simulación de Vivado
+.Xil/
+*.runs/
+*.cache/
+*.hw/
+*.sim/
+*.ip_user_files/
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
