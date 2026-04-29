@@ -12,23 +12,30 @@ entity ALU is
             );
 end ALU;
 
-architecture DataFlow of ALU is
-
-signal res_internal : std_logic_vector (7 downto 0);
-
+architecture Dataflow of ALU is
+    signal res_slt : std_logic_vector(7 downto 0);
+    signal res_sll : std_logic_vector(7 downto 0);
+    signal res_internal : std_logic_vector(7 downto 0);
 begin
 
-    with ALU_Sel select
-        res_internal <= 
-            std_logic_vector (unsigned(A) + unsigned(B)) when "000",
-            std_logic_vector (unsigned(A) - unsigned(B)) when "001",
-            (A AND B) when "010",
-            (A OR B) when "011",
-            B when "100", -- LI
-            A when others;
-            
-    Result <= res_internal;
-    
-    Zero <= '1' when (res_internal = "00000000") else '0';
+    -- Lógica para SLT (Set Less Than)
+    res_slt <= "00000001" when (signed(A) < signed(B)) else "00000000";
 
-end DataFlow;
+    -- Lógica para SLL (Shift Left Logical)
+    res_sll <= std_logic_vector(shift_left(unsigned(A), to_integer(unsigned(B(2 downto 0)))));
+
+    res_internal <= 
+        std_logic_vector(unsigned(A) + unsigned(B)) when ALU_Sel = "000" else
+        std_logic_vector(unsigned(A) - unsigned(B)) when ALU_Sel = "001" else
+        (A AND B)                                   when ALU_Sel = "010" else
+        (A OR B)                                    when ALU_Sel = "011" else
+        res_sll                                     when ALU_Sel = "100" else
+        res_slt                                     when ALU_Sel = "101" else
+        (A XOR B)                                   when ALU_Sel = "110" else
+        B                                           when ALU_Sel = "111" else
+        A;
+
+    Result <= res_internal;
+    Zero   <= '1' when (res_internal = "00000000") else '0';
+
+end Dataflow;

@@ -1,12 +1,15 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
 
 entity ALU_tb is
+-- Entidad vacía
 end ALU_tb;
 
 architecture Behavioral of ALU_tb is
 
-component ALU
+    -- Componente a probar
+    component ALU
         Port ( 
             A        : in  std_logic_vector(7 downto 0);
             B        : in  std_logic_vector(7 downto 0);
@@ -16,6 +19,7 @@ component ALU
         );
     end component;
 
+    -- Señales de interconexión
     signal A_tb       : std_logic_vector(7 downto 0) := (others => '0');
     signal B_tb       : std_logic_vector(7 downto 0) := (others => '0');
     signal ALU_Sel_tb : std_logic_vector(2 downto 0) := (others => '0');
@@ -24,66 +28,62 @@ component ALU
 
 begin
 
+    -- Instancia de la ALU
     uut: ALU port map (
-        A => A_tb,
-        B => B_tb,
+        A       => A_tb,
+        B       => B_tb,
         ALU_Sel => ALU_Sel_tb,
-        Result => Result_tb,
-        Zero => Zero_tb
-        );
-        
-        stim_proc: process
-        begin		
-            -- Prueba 1: Suma (5 + 3)
-            A_tb <= "00000101"; -- 5
-            B_tb <= "00000011"; -- 3
-            ALU_Sel_tb <= "000";
-            wait for 20 ns;
+        Result  => Result_tb,
+        Zero    => Zero_tb
+    );
 
-            -- Prueba 2: Resta (10 - 4)
-            A_tb <= "00001010"; -- 10
-            B_tb <= "00000100"; -- 4
-            ALU_Sel_tb <= "001";
-            wait for 20 ns;
+    -- Proceso de estímulos
+    stim_proc: process
+    begin
+        -- 000: ADD
+        A_tb <= std_logic_vector(to_unsigned(15, 8));
+        B_tb <= std_logic_vector(to_unsigned(10, 8));
+        ALU_Sel_tb <= "000";
+        wait for 20 ns;
 
-            -- Prueba 3: Flag Zero (5 - 5)
-            A_tb <= "00000101"; -- 5
-            B_tb <= "00000101"; -- 5
-            ALU_Sel_tb <= "001";
-            wait for 20 ns;
+        -- 001: SUB y Flag Zero
+        A_tb <= std_logic_vector(to_unsigned(20, 8));
+        B_tb <= std_logic_vector(to_unsigned(20, 8));
+        ALU_Sel_tb <= "001";
+        wait for 20 ns;
 
-            -- Prueba 4: Operación AND
-            A_tb <= "11110000";
-            B_tb <= "10101010";
-            ALU_Sel_tb <= "010";
-            wait for 20 ns;
-            
-            -- Prueba 5: OR 
-            -- A = 10100000, B = 00001010 -> Result = 10101010
-            A_tb <= "10100000"; 
-            B_tb <= "00001010"; 
-            ALU_Sel_tb <= "011";
-            wait for 20 ns;
+        -- 010: AND
+        A_tb <= "10101010"; B_tb <= "11110000";
+        ALU_Sel_tb <= "010";
+        wait for 20 ns;
 
-            -- Prueba 6: LI (Load Immediate)
-            A_tb <= "11111111"; 
-            B_tb <= "01010101"; 
-            ALU_Sel_tb <= "100";
-            wait for 20 ns;
-        
-            -- Prueba 7: Caso Others
-            A_tb <= "11001100"; 
-            B_tb <= "00110011"; 
-            ALU_Sel_tb <= "111";
-            wait for 20 ns;
+        -- 011: OR
+        A_tb <= "10101010"; B_tb <= "01010101";
+        ALU_Sel_tb <= "011";
+        wait for 20 ns;
 
-            -- Prueba 8: Flag Zero con AND que da 0
-            A_tb <= "10101010"; 
-            B_tb <= "01010101"; 
-            ALU_Sel_tb <= "010";
-            wait for 20 ns;
+        -- 100: SLL
+        A_tb <= "00000001"; B_tb <= "00000110";
+        ALU_Sel_tb <= "100";
+        wait for 20 ns;
 
-            wait;
+        -- 101: SLT (Caso TRUE: -5 < 2)
+        -- A = (-5 en compl. a 2)
+        A_tb <= "11111011"; B_tb <= "00000010";
+        ALU_Sel_tb <= "101";
+        wait for 20 ns;
+
+        -- 110: XOR (0xFF XOR 0x0F = 0xF0)
+        A_tb <= "11111111"; B_tb <= "00001111";
+        ALU_Sel_tb <= "110";
+        wait for 20 ns;
+
+        -- 111: LI
+        A_tb <= "10101010"; B_tb <= "00111100";
+        ALU_Sel_tb <= "111";
+        wait for 20 ns;
+
+        wait;
     end process;
 
 end Behavioral;
