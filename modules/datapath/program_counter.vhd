@@ -35,31 +35,25 @@ end program_counter;
 
 architecture Behavioral of program_counter is
   
-    -- Usamos una señal interna de tipo unsigned para facilitar las operaciones aritméticas
     signal pc_reg : unsigned(7 downto 0) := (others => '0');
 
 begin
 
-    -- Proceso secuencial que describe el comportamiento del registro
     process(clk, reset)
     begin
         if reset = '1' then
-            -- Reseteo asíncrono a la dirección inicial [cite: 117]
+            -- Reseteo asíncrono a la dirección inicial
             pc_reg <= (others => '0');
             
         elsif rising_edge(clk) then
-            -- En cada flanco de subida, evaluamos qué debe hacer el PC
             if load = '1' then
-                -- Comportamiento de salto (para BEQ o JAL) [cite: 68, 69]
                 pc_reg <= unsigned(d_in);
             else
-                -- Comportamiento por defecto: incremento secuencial
                 pc_reg <= pc_reg + 1;
             end if;
         end if;
     end process;
 
-    -- Asignación de la salida (conversión de tipo)
     pc_out <= std_logic_vector(pc_reg);
 
 end Behavioral;
