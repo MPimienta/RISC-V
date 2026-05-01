@@ -27,7 +27,8 @@ entity control_unit is
     Port (
         clk : in std_logic;
         reset : in std_logic;
-        opcode : in std_logic_vector(7 downto 0);
+        opcode : in std_logic_vector(3 downto 0);
+        funct : in std_logic_vector(2 downto 0);
         zero : in std_logic;
         
         -- Señales para el Datapath
@@ -35,74 +36,138 @@ entity control_unit is
         pc_load : out std_logic;
         reg_write : out std_logic;
         alu_sel : out std_logic_vector(2 downto 0);
-        ir_en : out std_logic
+        alu_src_b : out std_logic;
+        mem_write  : out std_logic;
+        mem_to_reg : out std_logic;
+        ir_high_en : out std_logic;
+        ir_low_en : out std_logic
     );
 end control_unit;
 
 architecture Behavioral of control_unit is
-    type state_type is (ST_FETCH, ST_DECODE, ST_EXECUTE, ST_WRITEBACK, ST_JUMP);
+    type state_type is (ST_FETCH_HIGH, ST_FETCH_LOW, ST_DECODE, ST_EXECUTE, ST_WRITEBACK, ST_JUMP, ST_MEM);
     signal current_state, next_state : state_type;
 begin
 
     process(clk, reset)
     begin
         if reset = '1' then
-            current_state <= ST_FETCH;
+            current_state <= ST_FETCH_HIGH;
         elsif rising_edge(clk) then
             current_state <= next_state;
         end if;
     end process;
 
-    process(current_state, opcode, zero)
+    process(current_state, opcode, zero, funct)
     begin
         -- Valores por defecto
-        pc_en <= '0';
-        pc_load <= '0';
-        reg_write <= '0';
-        ir_en <= '0';
-        alu_sel <= "111";
-        next_state <= ST_FETCH;
+        pc_en          <= '0';
+        pc_load        <= '0';
+        reg_write      <= '0';
+        ir_high_en     <= '0';
+        ir_low_en      <= '0';
+        mem_write      <= '0';
+        alu_src_b      <= '0'; 
+        mem_to_reg     <= '0';
+        alu_sel        <= "111"; 
+        next_state     <= current_state;
 
         case current_state is
-            when ST_FETCH =>
-                ir_en <= '1';
+            when ST_FETCH_HIGH =>
+                ir_high_en <= '1';
+                pc_en <= '1';
+                next_state <= ST_FETCH_LOW;
+                
+            when ST_FETCH_LOW =>
+                ir_low_en <= '1'; 
                 pc_en <= '1';
                 next_state <= ST_DECODE;
 
             when ST_DECODE =>
-                if opcode = X"08" or opcode = X"09" then
+                if opcode = "0101" or opcode = "0111" or opcode = "0110" or opcode = "1000" then -- BEQ || JAL || BNE || JALR
                     next_state <= ST_JUMP;
+                elsif opcode = "0001" or opcode = "0010" then -- LW o SW
+                    next_state <= ST_MEM;
                 else
                     next_state <= ST_EXECUTE;
                 end if;
 
             when ST_EXECUTE =>
+                alu_src_b <= '0'; 
                 case opcode is
-                    when X"01" => alu_sel <= "000"; -- ADD 
-                    when X"02" => alu_sel <= "001"; -- SUB 
-                    when X"03" => alu_sel <= "010"; -- AND 
-                    when X"04" => alu_sel <= "011"; -- OR 
-                    when X"05" => alu_sel <= "100"; -- SLL
-                    when X"06" => alu_sel <= "101"; -- SLT
-                    when X"07" => alu_sel <= "110"; -- XOR
-                    when others => alu_sel <= "111"; -- B
+                    when "0000" =>
+                        case funct is
+                            when "000" => alu_sel <= "000"; -- ADD 
+                            when "001" => alu_sel <= "001"; -- SUB
+                            when "010" => alu_sel <= "010"; -- AND
+                            when "011" => alu_sel <= "011"; -- OR
+                            when "100" => alu_sel <= "100"; -- SLL
+                            when "101" => alu_sel <= "101"; -- SLT
+                            when "110" => alu_sel <= "110"; -- XOR
+                            when others => alu_sel <= "111"; -- LI
+                        end case;
+                        
+                    when "0011" => 
+                        alu_sel <= "000";   -- Suma
+                        alu_src_b <= '1';   -- Inmediato
+                    
+                    when "0100" => 
+                        alu_sel <= "111";   -- Pasa B limpio 
+                        alu_src_b <= '1';   -- Inmediato
+                        
+                    when others => 
+                        alu_sel <= "111"; 
                 end case;
+                
                 next_state <= ST_WRITEBACK;
+                
+            when ST_MEM =>
+                alu_sel <= "000"; -- Sumamos dirección base + offset
+                alu_src_b <= '1';
+                
+                if opcode = "0010" then 
+                    mem_write <= '1';  -- SW
+                    next_state <= ST_FETCH_HIGH; 
+                else                    
+                    next_state <= ST_WRITEBACK; -- LW
+                end if;
 
             when ST_WRITEBACK =>
-                reg_write  <= '1';
-                next_state <= ST_FETCH;
+                reg_write <= '1';
+                if opcode = "0001" then 
+                    mem_to_reg <= '1';  -- LW
+                else
+                    mem_to_reg <= '0';  -- Resto
+                end if;
+                next_state <= ST_FETCH_HIGH;
 
             when ST_JUMP =>
-                -- BEQ
-                if opcode = X"08" then 
-                    alu_sel <= "001"; 
-                    if zero = '1' then pc_load <= '1'; end if;
-                -- JAL
-                elsif opcode = X"09" then
+                if opcode = "0101" then     -- BEQ
+                    alu_sel <= "001";
+                    alu_src_b <= '0';
+                    if zero = '1' then 
+                        pc_load <= '1';     
+                        pc_en <= '1';
+                    end if;
+                    
+                elsif opcode = "0110" then  -- BNE
+                    alu_sel <= "001";
+                    alu_src_b <= '0';
+                    if zero = '0' then 
+                        pc_load <= '1';
+                        pc_en <= '1';
+                    end if;
+                    
+                elsif opcode = "0111" then  -- JAL
                     pc_load <= '1';
+                    pc_en <= '1';
+                    
+                elsif opcode = "1000" then  -- JALR
+                    pc_load <= '1';
+                    pc_en <= '1';
                 end if;
-                next_state <= ST_FETCH;
+                
+                next_state <= ST_FETCH_HIGH;
         end case;
     end process;
 end Behavioral;
