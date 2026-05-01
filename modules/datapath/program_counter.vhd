@@ -42,10 +42,12 @@ begin
         if reset = '1' then
             pc_reg <= (others => '0');
         elsif rising_edge(clk) then
-            if load = '1' then
-                pc_reg <= unsigned(d_in);
-            elsif pc_en = '1' then
-                pc_reg <= pc_reg + 1;
+            if pc_en = '1' then
+                if load = '1' then
+                    pc_reg <= unsigned(d_in);
+                else
+                    pc_reg <= pc_reg + 1;
+                end if;
             end if;
         end if;
     end process;
