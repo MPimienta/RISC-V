@@ -52,6 +52,7 @@ begin
                 count <= (others => '0');
                 btn_out <= '0';
                 btn_stable <= '0';
+                btn_prev <= '0';
             else
                 if btn_in /= btn_prev then
                     count <= (others => '0');
