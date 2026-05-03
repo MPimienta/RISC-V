@@ -43,20 +43,20 @@ begin
     -- Mapeo de Hexadecimal a 7 segmentos ('0' enciende)
     -- seg_out es (g f e d c b a)
     with hex_in select
-        seg_out <= "1000000" when x"0", -- 0
-                   "1111001" when x"1", -- 1
-                   "0100100" when x"2", -- 2
-                   "0110000" when x"3", -- 3
-                   "0011001" when x"4", -- 4
-                   "0010010" when x"5", -- 5
-                   "0000010" when x"6", -- 6
-                   "1111000" when x"7", -- 7
-                   "0000000" when x"8", -- 8
-                   "0010000" when x"9", -- 9
-                   "0001000" when x"A", -- A
-                   "0000011" when x"B", -- b
-                   "1000110" when x"C", -- C
-                   "0100001" when x"D", -- d
-                   "0000110" when x"E", -- E
-                   "0001110" when others; -- F
+        seg_out <= "1000000" when x"0", 
+                   "1111001" when x"1", 
+                   "0100100" when x"2", 
+                   "0110000" when x"3", 
+                   "0011001" when x"4", 
+                   "0010010" when x"5", 
+                   "0000010" when x"6", 
+                   "1111000" when x"7", 
+                   "0000000" when x"8", 
+                   "0010000" when x"9", 
+                   "0001000" when x"A", 
+                   "0000011" when x"B", 
+                   "1000110" when x"C", 
+                   "0100001" when x"D", 
+                   "0000110" when x"E", 
+                   "0001110" when others; 
 end Dataflow;

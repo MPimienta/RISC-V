@@ -5,7 +5,7 @@
 -- Create Date: 04/25/2026 09:48:35 PM
 -- Design Name: 
 -- Module Name: riscv - Structural
--- Project Name: 
+-- Project Name:
 -- Target Devices: 
 -- Tool Versions: 
 -- Description: 
@@ -162,8 +162,14 @@ component rom_instructions is
     );
 end component;
 
+component seven_seg_decoder is
+    Port ( 
+        hex_in  : in  std_logic_vector (3 downto 0);
+        seg_out : out std_logic_vector (6 downto 0)
+    );
+end component;
+
     signal clk_deb       : std_logic; 
-    signal rst_deb       : std_logic; 
 
     signal pc_current    : std_logic_vector(7 downto 0); 
     signal pc_next       : std_logic_vector(7 downto 0); 
@@ -196,20 +202,22 @@ end component;
     signal ram_data_raw     : std_logic_vector(7 downto 0); 
     signal dec_ram_we       : std_logic;                    
     signal display_val      : std_logic_vector(7 downto 0); 
+    
+    signal refresh_counter : unsigned(19 downto 0) := (others => '0');
+    signal active_digit    : std_logic_vector(3 downto 0);
 
 
 begin
 
     deb_clk: debouncer port map (clk => clk, reset => btn_reset, btn_in => btn_clk, btn_out => clk_deb);
-    deb_rst: debouncer port map (clk => clk, reset => '0', btn_in => btn_reset, btn_out => rst_deb);
 
-    inst_PC: program_counter port map (clk => clk_deb, reset => rst_deb, pc_en => pc_en_sig, load => pc_load_sig, d_in => pc_next, pc_out => pc_current);
+    inst_PC: program_counter port map (clk => clk_deb, reset => btn_reset, pc_en => pc_en_sig, load => pc_load_sig, d_in => pc_next, pc_out => pc_current);
     inst_ROM: rom_instructions port map (instruction_addr => pc_current, instruction_out => rom_data_raw);
     
     process(clk_deb)
     begin
         if rising_edge(clk_deb) then
-            if rst_deb = '1' then ir_register <= (others => '0');
+            if btn_reset = '1' then ir_register <= (others => '0');
             else
                 if ir_high_en = '1' then ir_register(15 downto 8) <= rom_data_raw; end if;
                 if ir_low_en = '1' then  ir_register(7 downto 0)  <= rom_data_raw; end if;
@@ -218,7 +226,7 @@ begin
     end process;
 
     inst_CU: control_unit port map (
-        clk => clk_deb, reset => rst_deb, zero => alu_zero_flag,
+        clk => clk_deb, reset => btn_reset, zero => alu_zero_flag,
         opcode => ir_register(15 downto 12), funct => ir_register(2 downto 0),
         pc_en => pc_en_sig, pc_load => pc_load_sig, reg_write => ctrl_reg_write,
         alu_sel => ctrl_alu_sel, alu_src_b => ctrl_alu_src_b, 
@@ -229,8 +237,8 @@ begin
     inst_ImmGen: immediate_gen port map (instruction => ir_register, immediate_out => imm_ext_out);
 
     inst_Regs: registers port map (
-        clk => clk_deb, reset => rst_deb, reg_write => ctrl_reg_write,
-        rs1_addr => ir_register(11 downto 9), rs2_addr => ir_register(8 downto 6), rd_addr => ir_register(5 downto 3),
+        clk => clk_deb, reset => btn_reset, reg_write => ctrl_reg_write,
+        rs1_addr => ir_register(8 downto 6), rs2_addr => ir_register(5 downto 3), rd_addr => ir_register(11 downto 9),
         write_data => reg_write_data, rs1_data => reg_rs1_data, rs2_data => reg_rs2_data
     );
 
@@ -239,7 +247,7 @@ begin
 
     inst_Decoder: decoder port map (
         clk           => clk,
-        reset         => rst_deb,
+        reset         => btn_reset,
         cpu_addr      => alu_res_out,
         cpu_data_in   => reg_rs2_data,
         cpu_mem_write => ctrl_mem_write,
@@ -257,10 +265,31 @@ begin
     reg_write_data <= alu_res_out when ctrl_mem_to_reg = '0' else mem_cpu_data_out;
 
     inst_Branch: branch_adder port map (pc_in => pc_current, imm_in => imm_ext_out, target_out => branch_target);
-    pc_next <= branch_target when pc_load_sig = '1' else std_logic_vector(unsigned(pc_current) + 1);
+    pc_next <= alu_res_out when (pc_load_sig = '1' and ir_register(15 downto 12) = "1000") else 
+           branch_target when pc_load_sig = '1' else 
+           std_logic_vector(unsigned(pc_current) + 1);    
+    inst_7seg: seven_seg_decoder port map (
+        hex_in  => active_digit, 
+        seg_out => seg           
+    );
 
-    seg <= display_val(6 downto 0); 
-    an  <= "1110"; 
-    dp  <= '1';
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            refresh_counter <= refresh_counter + 1;
+        end if;
+    end process;
+
+    process(refresh_counter, display_val)
+    begin
+        if refresh_counter(17) = '0' then
+            active_digit <= display_val(3 downto 0); 
+            an <= "1110"; 
+        else
+            active_digit <= display_val(7 downto 4); 
+            an <= "1101"; 
+        end if;
+    end process;
+    dp <= '1';
 
 end Structural;

@@ -29,6 +29,9 @@ use IEEE.NUMERIC_STD.ALL;
 --use UNISIM.VComponents.all;
 
 entity debouncer is
+    Generic (
+        LIMIT : integer := 10
+    );
     Port ( 
         clk     : in std_logic;
         reset   : in std_logic;
@@ -38,7 +41,6 @@ entity debouncer is
 end debouncer;
 
 architecture Behavioral of debouncer is
-
     signal count : unsigned (19 downto 0) := (others => '0');
     signal btn_prev : std_logic := '0';
     signal btn_stable : std_logic := '0';
@@ -57,13 +59,12 @@ begin
                 if btn_in /= btn_prev then
                     count <= (others => '0');
                     btn_prev <= btn_in;
-                elsif count < 1000000 then
+                elsif count < LIMIT then
                     count <= count + 1;
                 else
                     btn_stable <= btn_prev;
-                end if;
-                
-                if btn_stable = '0' and btn_prev = '1' and count = 1000000 then
+                end if;             
+                if btn_stable = '0' and btn_prev = '1' and count = LIMIT then
                     btn_out <= '1';
                 else
                     btn_out <= '0';
