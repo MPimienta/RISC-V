@@ -163,9 +163,13 @@ component rom_instructions is
 end component;
 
 component seven_seg_decoder is
-    Port ( 
-        hex_in  : in  std_logic_vector (3 downto 0);
-        seg_out : out std_logic_vector (6 downto 0)
+    Port (
+        clk      : in  std_logic;                    -- Reloj de 100 MHz de la placa
+        reset    : in  std_logic;                    -- Reset global
+        data_in  : in  std_logic_vector(7 downto 0); -- Dato de 8 bits a mostrar (ej. el PC)
+        seg      : out std_logic_vector(6 downto 0); -- Segmentos A-G
+        dp       : out std_logic;                    -- Punto decimal
+        an       : out std_logic_vector(3 downto 0)  -- Ánodos de los 4 displays
     );
 end component;
 
@@ -202,9 +206,6 @@ end component;
     signal ram_data_raw     : std_logic_vector(7 downto 0); 
     signal dec_ram_we       : std_logic;                    
     signal display_val      : std_logic_vector(7 downto 0); 
-    
-    signal refresh_counter : unsigned(19 downto 0) := (others => '0');
-    signal active_digit    : std_logic_vector(3 downto 0);
 
 
 begin
@@ -268,28 +269,15 @@ begin
     pc_next <= alu_res_out when (pc_load_sig = '1' and ir_register(15 downto 12) = "1000") else 
            branch_target when pc_load_sig = '1' else 
            std_logic_vector(unsigned(pc_current) + 1);    
-    inst_7seg: seven_seg_decoder port map (
-        hex_in  => active_digit, 
-        seg_out => seg           
+   
+   inst_Seg7: seven_seg_decoder port map (
+        clk      => clk,         -- Usamos el reloj rápido de 100MHz para que no parpadee
+        reset    => btn_reset,
+        data_in  => pc_current,  -- ¡Aquí conectamos el valor del Program Counter!
+        seg      => seg,         -- Salidas físicas a la placa
+        dp       => dp,
+        an       => an
     );
-
-    process(clk)
-    begin
-        if rising_edge(clk) then
-            refresh_counter <= refresh_counter + 1;
-        end if;
-    end process;
-
-    process(refresh_counter, display_val)
-    begin
-        if refresh_counter(17) = '0' then
-            active_digit <= display_val(3 downto 0); 
-            an <= "1110"; 
-        else
-            active_digit <= display_val(7 downto 4); 
-            an <= "1101"; 
-        end if;
-    end process;
-    dp <= '1';
+    
 
 end Structural;
