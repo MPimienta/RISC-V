@@ -45,7 +45,7 @@ entity control_unit is
 end control_unit;
 
 architecture Behavioral of control_unit is
-    type state_type is (ST_FETCH_HIGH, ST_FETCH_LOW, ST_DECODE, ST_EXECUTE, ST_WRITEBACK, ST_JUMP, ST_MEM);
+    type state_type is (ST_FETCH_HIGH, ST_FETCH_LOW, ST_DECODE, ST_EXECUTE, ST_JUMP, ST_MEM);
     signal current_state, next_state : state_type;
 begin
 
@@ -93,6 +93,7 @@ begin
                 end if;
 
             when ST_EXECUTE =>
+                reg_write <= '1';
                 alu_src_b <= '0'; 
                 case opcode is
                     when "0000" =>
@@ -119,27 +120,22 @@ begin
                         alu_sel <= "111"; 
                 end case;
                 
-                next_state <= ST_WRITEBACK;
+                next_state <= ST_FETCH_HIGH;
                 
             when ST_MEM =>
-                alu_sel <= "000"; -- Sumamos dirección base + offset
+                alu_sel <= "000"; 
                 alu_src_b <= '1';
                 
                 if opcode = "0010" then 
                     mem_write <= '1';  -- SW
                     next_state <= ST_FETCH_HIGH; 
                 else                    
-                    next_state <= ST_WRITEBACK; -- LW
+                    reg_write <= '1'; 
+                    mem_to_reg <= '1';
+                    next_state <= ST_FETCH_HIGH;
                 end if;
 
-            when ST_WRITEBACK =>
-                reg_write <= '1';
-                if opcode = "0001" then 
-                    mem_to_reg <= '1';  -- LW
-                else
-                    mem_to_reg <= '0';  -- Resto
-                end if;
-                next_state <= ST_FETCH_HIGH;
+            
 
             when ST_JUMP =>
                 if opcode = "0101" then     -- BEQ

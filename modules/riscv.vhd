@@ -215,7 +215,7 @@ end component;
 begin
     w_rs1_addr <= ir_register_high(0) & ir_register_low(7 downto 6); -- empalme
     deb_clk: debouncer port map (clk => clk, reset => btn_reset, btn_in => btn_clk, btn_out => clk_deb);
-
+    
     inst_PC: program_counter port map (clk => clk_deb, reset => btn_reset, pc_en => pc_en_sig, load => pc_load_sig, d_in => pc_next, pc_out => pc_current);
     inst_ROM: rom_instructions port map (instruction_addr => pc_current, instruction_out => rom_data_raw);
     
@@ -258,7 +258,7 @@ begin
     inst_ALU: ALU port map (A => reg_rs1_data, B => alu_operand_b, ALU_Sel => ctrl_alu_sel, Result => alu_res_out, Zero => alu_zero_flag);
 
     inst_Decoder: decoder port map (
-        clk           => clk,
+        clk           => clk_deb,
         reset         => btn_reset,
         cpu_addr      => alu_res_out,
         cpu_data_in   => reg_rs2_data,
@@ -272,7 +272,7 @@ begin
         display_out   => display_val
     );
 
-    inst_RAM: ram_data port map (clk => clk, write_en => dec_ram_we, data_addr => alu_res_out, data_in => reg_rs2_data, data_out => ram_data_raw);
+    inst_RAM: ram_data port map (clk => clk_deb, write_en => dec_ram_we, data_addr => alu_res_out, data_in => reg_rs2_data, data_out => ram_data_raw);
 
     reg_write_data <= alu_res_out when ctrl_mem_to_reg = '0' else mem_cpu_data_out;
 
