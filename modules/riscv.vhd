@@ -130,8 +130,9 @@ component decoder is
 end component;
 
 component immediate_gen is
-    Port ( instruction : in STD_LOGIC_VECTOR (15 downto 0);
-           immediate_out : out STD_LOGIC_VECTOR (7 downto 0));
+    Port ( instruction_high : in STD_LOGIC_VECTOR (7 downto 0);
+           instruction_low  : in STD_LOGIC_VECTOR (7 downto 0); 
+           immediate_out    : out STD_LOGIC_VECTOR (7 downto 0));
 end component;
 
 component program_counter is
@@ -182,7 +183,10 @@ end component;
     signal pc_load_sig   : std_logic;                    
 
     signal rom_data_raw  : std_logic_vector(7 downto 0);  
-    signal ir_register   : std_logic_vector(15 downto 0); 
+    --signal ir_register   : std_logic_vector(15 downto 0); 
+    signal ir_register_high : std_logic_vector (7 downto 0);
+    signal w_rs1_addr    : std_logic_vector(2 downto 0); -- para que no se queje
+    signal ir_register_low : std_logic_vector (7 downto 0);
     signal ir_high_en    : std_logic;                    
     signal ir_low_en     : std_logic;                    
 
@@ -209,7 +213,7 @@ end component;
 
 
 begin
-
+    w_rs1_addr <= ir_register_high(0) & ir_register_low(7 downto 6); -- empalme
     deb_clk: debouncer port map (clk => clk, reset => btn_reset, btn_in => btn_clk, btn_out => clk_deb);
 
     inst_PC: program_counter port map (clk => clk_deb, reset => btn_reset, pc_en => pc_en_sig, load => pc_load_sig, d_in => pc_next, pc_out => pc_current);
@@ -218,28 +222,35 @@ begin
     process(clk_deb)
     begin
         if rising_edge(clk_deb) then
-            if btn_reset = '1' then ir_register <= (others => '0');
+            if btn_reset = '1' then
+                ir_register_high <= (others => '0');
+                ir_register_low <= (others => '0');
             else
-                if ir_high_en = '1' then ir_register(15 downto 8) <= rom_data_raw; end if;
-                if ir_low_en = '1' then  ir_register(7 downto 0)  <= rom_data_raw; end if;
+                if ir_high_en = '1' then ir_register_high <= rom_data_raw; end if;
+                if ir_low_en = '1' then  ir_register_low  <= rom_data_raw; end if;
             end if;
         end if;
     end process;
 
     inst_CU: control_unit port map (
         clk => clk_deb, reset => btn_reset, zero => alu_zero_flag,
-        opcode => ir_register(15 downto 12), funct => ir_register(2 downto 0),
+        opcode => ir_register_high(7 downto 4), funct => ir_register_low(2 downto 0),
         pc_en => pc_en_sig, pc_load => pc_load_sig, reg_write => ctrl_reg_write,
         alu_sel => ctrl_alu_sel, alu_src_b => ctrl_alu_src_b, 
         mem_write => ctrl_mem_write, mem_to_reg => ctrl_mem_to_reg,
         ir_high_en => ir_high_en, ir_low_en => ir_low_en
     );
 
-    inst_ImmGen: immediate_gen port map (instruction => ir_register, immediate_out => imm_ext_out);
+    inst_ImmGen: immediate_gen port map (
+        instruction_high => ir_register_high,
+        instruction_low => ir_register_low,    
+        immediate_out => imm_ext_out
+    );
 
     inst_Regs: registers port map (
         clk => clk_deb, reset => btn_reset, reg_write => ctrl_reg_write,
-        rs1_addr => ir_register(8 downto 6), rs2_addr => ir_register(5 downto 3), rd_addr => ir_register(11 downto 9),
+        rs1_addr => w_rs1_addr, rs2_addr => ir_register_low(5 downto 3),
+        rd_addr => ir_register_high(3 downto 1),
         write_data => reg_write_data, rs1_data => reg_rs1_data, rs2_data => reg_rs2_data
     );
 
@@ -267,7 +278,7 @@ begin
 
     inst_Branch: branch_adder port map (pc_in => pc_current, imm_in => imm_ext_out, target_out => branch_target);
            
-    pc_next <= alu_res_out when ir_register(15 downto 12) = "1000" else branch_target;
+    pc_next <= alu_res_out when ir_register_high(7 downto 4) = "1000" else branch_target;
    
    inst_Seg7: seven_seg_decoder port map (
         clk      => clk,         -- Usamos el reloj rápido de 100MHz para que no parpadee
