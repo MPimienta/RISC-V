@@ -266,9 +266,8 @@ begin
     reg_write_data <= alu_res_out when ctrl_mem_to_reg = '0' else mem_cpu_data_out;
 
     inst_Branch: branch_adder port map (pc_in => pc_current, imm_in => imm_ext_out, target_out => branch_target);
-    pc_next <= alu_res_out when (pc_load_sig = '1' and ir_register(15 downto 12) = "1000") else 
-           branch_target when pc_load_sig = '1' else 
-           std_logic_vector(unsigned(pc_current) + 1);    
+           
+    pc_next <= alu_res_out when ir_register(15 downto 12) = "1000" else branch_target;
    
    inst_Seg7: seven_seg_decoder port map (
         clk      => clk,         -- Usamos el reloj rápido de 100MHz para que no parpadee
