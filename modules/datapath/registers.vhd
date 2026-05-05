@@ -41,18 +41,18 @@ entity registers is
         rs2_addr    :   in std_logic_vector (2 downto 0);   -- direccion del segundo registro fuente
         rd_addr     :   in std_logic_vector (2 downto 0);   -- direccion del registro destino
         
-        write_data  :   in std_logic_vector (7 downto 0);   -- datos de entrada para escribir en el registro
-        rs1_data    :   out std_logic_vector (7 downto 0);   -- datos de salida del primer  registro fuente
-        rs2_data    :   out std_logic_vector (7 downto 0)    -- datos de salida del segundo registro fuente
+        write_data  :   in std_logic_vector (15 downto 0);   -- datos de entrada para escribir en el registro
+        rs1_data    :   out std_logic_vector (15 downto 0);   -- datos de salida del primer  registro fuente
+        rs2_data    :   out std_logic_vector (15 downto 0)    -- datos de salida del segundo registro fuente
         
     );
 end registers;
 
 architecture Behavioral of registers is
     
-    type reg_array is array (0 to 7) of STD_LOGIC_VECTOR(7 downto 0); -- 8 registros de 8 bits
+    type reg_array is array (0 to 7) of STD_LOGIC_VECTOR(15 downto 0); -- 8 registros de 16 bits
     
-    signal regs : reg_array := (others => "00000000");
+    signal regs : reg_array := (others => "0000000000000000");
 
 begin
 
@@ -63,7 +63,7 @@ begin
     begin
         if rising_edge(clk) then
             if reset = '1' then
-                regs <= (others => "00000000");
+                regs <= (others => "0000000000000000");
             elsif reg_write = '1' then
                 if rd_addr /= "000" then
                     regs(to_integer(unsigned(rd_addr))) <= write_data;
