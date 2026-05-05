@@ -32,9 +32,9 @@ use IEEE.NUMERIC_STD.ALL;
 --use UNISIM.VComponents.all;
 
 entity branch_adder is
-    Port ( pc_in : in STD_LOGIC_VECTOR (7 downto 0);
-           imm_in : in STD_LOGIC_VECTOR (7 downto 0);
-           target_out : out STD_LOGIC_VECTOR (7 downto 0));
+    Port ( pc_in : in STD_LOGIC_VECTOR (15 downto 0);
+           imm_in : in STD_LOGIC_VECTOR (15 downto 0);
+           target_out : out STD_LOGIC_VECTOR (15 downto 0));
 end branch_adder;
 
 architecture Behavioral of branch_adder is

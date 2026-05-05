@@ -32,9 +32,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 --use UNISIM.VComponents.all;
 
 entity immediate_gen is
-    Port ( instruction_high : in STD_LOGIC_VECTOR (7 downto 0);
-           instruction_low  : in STD_LOGIC_VECTOR (7 downto 0);
-           immediate_out : out STD_LOGIC_VECTOR (7 downto 0));
+    Port ( instruction   : in STD_LOGIC_VECTOR (15 downto 0);
+           immediate_out : out STD_LOGIC_VECTOR (15 downto 0));
 end immediate_gen;
 
 architecture Behavioral of immediate_gen is
@@ -43,27 +42,29 @@ architecture Behavioral of immediate_gen is
 
 begin
 
-    op_code <= instruction_high(7 downto 4);
+    op_code <= instruction(15 downto 12);
     
-    process(instruction_high, instruction_low, op_code)
+    process(instruction, op_code)
     begin
         case op_code is
             -- operaciones que traen inmediatos de 6 bits
             when "0001" | "0010" | "0011" | "0101" | "0110" | "1000" => 
-                if instruction_low(5) = '1' then
-                    immediate_out <= "11" & instruction_low(5 downto 0);
+                if instruction(5) = '1' then
+                    immediate_out <= "1111111111" & instruction(5 downto 0);
                 else 
-                    immediate_out <= "00" & instruction_low(5 downto 0);
+                    immediate_out <= "0000000000" & instruction(5 downto 0);
                 end if;
             -- operaciones que traen inmediatos de 9 bits
             when "0100" | "0111" =>
-                immediate_out <= instruction_low(7 downto 0);
+                if instruction(8) = '1' then
+                    immediate_out <= "1111111" & instruction(8 downto 0);
+                else
+                    immediate_out <= "0000000" & instruction(8 downto 0);
+                end if;
             when others =>
-                immediate_out <= "00000000";
+                immediate_out <= "0000000000000000";
         end case;
     end process;
-
-
 
 
 end Behavioral;

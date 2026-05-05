@@ -29,13 +29,13 @@ entity program_counter is
         reset    : in  std_logic;
         pc_en    : in  std_logic;                    -- Solo avanza cuando la UC lo pide
         load     : in  std_logic;                    -- Para saltos BEQ/JAL 
-        d_in     : in  std_logic_vector(7 downto 0); 
-        pc_out   : out std_logic_vector(7 downto 0)
+        d_in     : in  std_logic_vector(15 downto 0); 
+        pc_out   : out std_logic_vector(15 downto 0)
     );
 end program_counter;
 
 architecture Behavioral of program_counter is
-    signal pc_reg : unsigned(7 downto 0) := (others => '0');
+    signal pc_reg : unsigned(15 downto 0) := (others => '0');
 begin
     process(clk, reset)
     begin
