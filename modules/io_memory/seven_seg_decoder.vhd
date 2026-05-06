@@ -35,7 +35,7 @@ entity seven_seg_decoder is
     Port (
         clk      : in  std_logic;                    -- Reloj de 100 MHz de la placa
         reset    : in  std_logic;                    -- Reset global
-        data_in  : in  std_logic_vector(7 downto 0); -- Dato de 8 bits a mostrar (ej. el PC)
+        data_in  : in  std_logic_vector(15 downto 0); -- Dato de 16 bits a mostrar (ej. el PC)
         seg      : out std_logic_vector(6 downto 0); -- Segmentos A-G
         dp       : out std_logic;                    -- Punto decimal
         an       : out std_logic_vector(3 downto 0)  -- Ánodos de los 4 displays
@@ -76,10 +76,10 @@ process(led_activating_counter, data_in) -- <-- Añade data_in a la lista sensib
         case led_activating_counter is
             when "00" =>
                 an <= "0111"; 
-                current_digit <= "0000"; -- <-- AÑADE ESTO
+                current_digit <= data_in(15 downto 12);
             when "01" =>
                 an <= "1011"; 
-                current_digit <= "0000"; -- <-- AÑADE ESTO
+                current_digit <= data_in(11 downto 8);
             when "10" =>
                 an <= "1101"; 
                 current_digit <= data_in(7 downto 4);
@@ -88,7 +88,7 @@ process(led_activating_counter, data_in) -- <-- Añade data_in a la lista sensib
                 current_digit <= data_in(3 downto 0);
             when others =>
                 an <= "1111";
-                current_digit <= "0000"; -- <-- AÑADE ESTO por seguridad
+                current_digit <= "0000"; -- <-- ESTO por seguridad
         end case;
     end process;
 

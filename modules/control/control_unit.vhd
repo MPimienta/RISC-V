@@ -39,20 +39,19 @@ entity control_unit is
         alu_src_b : out std_logic;
         mem_write  : out std_logic;
         mem_to_reg : out std_logic;
-        ir_high_en : out std_logic;
-        ir_low_en : out std_logic
+        ir_en : out std_logic
     );
 end control_unit;
 
 architecture Behavioral of control_unit is
-    type state_type is (ST_FETCH_HIGH, ST_FETCH_LOW, ST_DECODE, ST_EXECUTE, ST_JUMP, ST_MEM);
+    type state_type is (ST_FETCH, ST_DECODE, ST_EXECUTE, ST_JUMP, ST_MEM);
     signal current_state, next_state : state_type;
 begin
 
     process(clk, reset)
     begin
         if reset = '1' then
-            current_state <= ST_FETCH_HIGH;
+            current_state <= ST_FETCH;
         elsif rising_edge(clk) then
             current_state <= next_state;
         end if;
@@ -64,8 +63,7 @@ begin
         pc_en          <= '0';
         pc_load        <= '0';
         reg_write      <= '0';
-        ir_high_en     <= '0';
-        ir_low_en      <= '0';
+        ir_en          <= '0';
         mem_write      <= '0';
         alu_src_b      <= '0'; 
         mem_to_reg     <= '0';
@@ -73,13 +71,8 @@ begin
         next_state     <= current_state;
 
         case current_state is
-            when ST_FETCH_HIGH =>
-                ir_high_en <= '1';
-                pc_en <= '1';
-                next_state <= ST_FETCH_LOW;
-                
-            when ST_FETCH_LOW =>
-                ir_low_en <= '1'; 
+            when ST_FETCH =>
+                ir_en <= '1';
                 pc_en <= '1';
                 next_state <= ST_DECODE;
 
@@ -120,7 +113,7 @@ begin
                         alu_sel <= "111"; 
                 end case;
                 
-                next_state <= ST_FETCH_HIGH;
+                next_state <= ST_FETCH;
                 
             when ST_MEM =>
                 alu_sel <= "000"; 
@@ -128,11 +121,11 @@ begin
                 
                 if opcode = "0010" then 
                     mem_write <= '1';  -- SW
-                    next_state <= ST_FETCH_HIGH; 
+                    next_state <= ST_FETCH; 
                 else                    
                     reg_write <= '1'; 
                     mem_to_reg <= '1';
-                    next_state <= ST_FETCH_HIGH;
+                    next_state <= ST_FETCH;
                 end if;
 
             
@@ -163,7 +156,7 @@ begin
                     pc_en <= '1';
                 end if;
                 
-                next_state <= ST_FETCH_HIGH;
+                next_state <= ST_FETCH;
         end case;
     end process;
 end Behavioral;

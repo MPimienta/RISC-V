@@ -36,26 +36,26 @@ entity decoder is
         clk          : in std_logic;
         reset        : in std_logic;
         -- Conexiones hacia la CPU
-        cpu_addr     : in std_logic_vector(7 downto 0);
-        cpu_data_in  : in std_logic_vector(7 downto 0); 
+        cpu_addr     : in std_logic_vector(15 downto 0);
+        cpu_data_in  : in std_logic_vector(15 downto 0); 
         cpu_mem_write: in std_logic;
-        cpu_data_out : out std_logic_vector(7 downto 0);
+        cpu_data_out : out std_logic_vector(15 downto 0);
         -- Conexiones hacia la RAM
-        ram_data_out : in std_logic_vector(7 downto 0); 
+        ram_data_out : in std_logic_vector(15 downto 0); 
         ram_we       : out std_logic;
         -- Conexiones hacia el mundo físico
-        switches_in  : in std_logic_vector(7 downto 0);
-        buttons_in   : in std_logic_vector(7 downto 0);
-        leds_out     : out std_logic_vector(7 downto 0);
-        display_out  : out std_logic_vector(7 downto 0)
+        switches_in  : in std_logic_vector(15 downto 0);
+        buttons_in   : in std_logic_vector(4 downto 0);
+        leds_out     : out std_logic_vector(15 downto 0);
+        display_out  : out std_logic_vector(15 downto 0)
     );
 end decoder;
 
 architecture Behavioral of decoder is
 
-    signal leds    : std_logic_vector(7 downto 0) := (others => '0');
-    signal display : std_logic_vector(7 downto 0) := (others => '0');
-    
+    signal leds    : std_logic_vector(15 downto 0) := (others => '0');
+    signal display : std_logic_vector(15 downto 0) := (others => '0');
+        
 begin
 
     process(clk, reset)
@@ -70,9 +70,9 @@ begin
             if cpu_mem_write = '1' then
                 if unsigned(cpu_addr) < 128 then
                     ram_we <= '1';
-                elsif cpu_addr = x"F0" then
+                elsif cpu_addr = x"00F0" then
                     leds <= cpu_data_in;
-                elsif cpu_addr = x"F1" then
+                elsif cpu_addr = x"00F1" then
                     display <= cpu_data_in;
                 end if;
             end if;
@@ -86,10 +86,10 @@ begin
     begin
         if unsigned(cpu_addr) < 128 then
             cpu_data_out <= ram_data_out;
-        elsif cpu_addr = x"E0" then
+        elsif cpu_addr = x"00E0" then
             cpu_data_out <= switches_in;
-        elsif cpu_addr = x"E1" then
-            cpu_data_out <= buttons_in;
+        elsif cpu_addr = x"00E1" then
+            cpu_data_out <= "00000000000" & buttons_in;
         else
             cpu_data_out <= (others => '0');
         end if;

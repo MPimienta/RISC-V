@@ -34,18 +34,18 @@ use IEEE.NUMERIC_STD.ALL;
 entity ram_data is
     Port ( 
         write_en        :   in std_logic ;
-        data_in         :   in std_logic_vector (7 downto 0);
-        data_out        :   out std_logic_vector (7 downto 0);
-        data_addr       :   in std_logic_vector (7 downto 0);
+        data_in         :   in std_logic_vector (15 downto 0);
+        data_out        :   out std_logic_vector (15 downto 0);
+        data_addr       :   in std_logic_vector (15 downto 0);
         clk             :   in std_logic 
     );
 end ram_data;
 
 architecture Behavioral of ram_data is
 
-    type ram_array is array (0 to 127) of STD_LOGIC_VECTOR(7 downto 0);
+    type ram_array is array (0 to 127) of STD_LOGIC_VECTOR(15 downto 0);
     
-    signal ram : ram_array := (others => x"00");
+    signal ram : ram_array := (others => x"0000");
 
 begin
 
