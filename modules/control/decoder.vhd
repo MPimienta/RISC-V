@@ -47,7 +47,9 @@ entity decoder is
         switches_in  : in std_logic_vector(15 downto 0);
         buttons_in   : in std_logic_vector(4 downto 0);
         leds_out     : out std_logic_vector(15 downto 0);
-        display_out  : out std_logic_vector(15 downto 0)
+        display_out  : out std_logic_vector(15 downto 0);
+        -- Conexiones hacia el display
+        lcd_we_out : out std_logic
     );
 end decoder;
 
@@ -65,13 +67,17 @@ begin
         if reset = '1' then
             leds <= (others => '0');
             display <= (others => '0');
+            lcd_we_out <= '0';
             
         elsif rising_edge(clk) then
+            lcd_we_out <= '0';
             if cpu_mem_write = '1' then
                 if cpu_addr = x"00F0" then
                     leds <= cpu_data_in;
                 elsif cpu_addr = x"00F1" then
                     display <= cpu_data_in;
+                elsif cpu_addr = x"00F2" then
+                    lcd_we_out <= '1';
                 end if;
             end if;
         end if;

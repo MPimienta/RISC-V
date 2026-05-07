@@ -63,6 +63,9 @@ architecture DataFlow of rom_instructions is
         10=> x"2501", -- SW R2, 1(R4) -> RAM[1] = R2
 
         11=> x"71F9", -- JAL 5 (Volver al bucle)
+        
+        12 => x"4422", -- LI R2, 0x22 (Cargar un valor de prueba, ej: 34 en decimal)
+        13 => x"24C2", -- SW R2, 2(R3) -> Esto es x"00F0" + 2 = x"00F2"
 
         others => x"0000"
     );
