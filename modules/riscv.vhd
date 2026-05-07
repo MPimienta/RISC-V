@@ -169,6 +169,7 @@ end component;
     signal dec_ram_we       : std_logic;                    
     signal display_val      : std_logic_vector(15 downto 0); 
 
+    signal w_rs2_addr : std_logic_vector(2 downto 0);
 begin
 
     deb_clk: debouncer port map (clk => clk, reset => btn_reset, btn_in => btn_clk, btn_out => clk_deb);
@@ -202,11 +203,16 @@ begin
         instruction => ir_register,
         immediate_out => imm_ext_out
     );
+    
+    w_rs2_addr <= ir_register(11 downto 9) when ir_register(15 downto 12) = "0010" else -- SW
+                  ir_register(11 downto 9) when ir_register(15 downto 12) = "0101" else -- BEQ
+                  ir_register(11 downto 9) when ir_register(15 downto 12) = "0110" else -- BNE
+                  ir_register(5 downto 3);
 
     inst_Regs: registers port map (
         clk => clk_deb, reset => btn_reset, reg_write => ctrl_reg_write,
         rs1_addr => ir_register(8 downto 6), 
-        rs2_addr => ir_register(5 downto 3),
+        rs2_addr => w_rs2_addr,
         rd_addr => ir_register(11 downto 9),
         write_data => reg_write_data, rs1_data => reg_rs1_data, rs2_data => reg_rs2_data
     );
@@ -240,7 +246,7 @@ begin
    inst_Seg7: seven_seg_decoder port map (
         clk      => clk,         
         reset    => btn_reset,
-        data_in  => pc_current,  -- O si prefieres ver el display: display_val
+        data_in  => pc_current, 
         seg      => seg,         
         dp       => dp,
         an       => an

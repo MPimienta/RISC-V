@@ -58,6 +58,8 @@ architecture Behavioral of decoder is
         
 begin
 
+    ram_we <= '1' when (cpu_mem_write = '1' and unsigned(cpu_addr) < 128) else '0';
+
     process(clk, reset)
     begin
         if reset = '1' then
@@ -65,12 +67,8 @@ begin
             display <= (others => '0');
             
         elsif rising_edge(clk) then
-            ram_we <= '0'; 
-
             if cpu_mem_write = '1' then
-                if unsigned(cpu_addr) < 128 then
-                    ram_we <= '1';
-                elsif cpu_addr = x"00F0" then
+                if cpu_addr = x"00F0" then
                     leds <= cpu_data_in;
                 elsif cpu_addr = x"00F1" then
                     display <= cpu_data_in;
