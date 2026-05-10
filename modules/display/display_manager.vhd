@@ -7,7 +7,7 @@ entity display_manager is
         clk         : in  std_logic;
         reset       : in  std_logic;
         
-        -- Datos provenientes de la CPU (Simplificados)
+        -- Datos provenientes de la CPU
         cpu_opcode  : in  std_logic_vector(6 downto 0);
         cpu_reg     : in  std_logic_vector(4 downto 0);
         cpu_val     : in  std_logic_vector(15 downto 0);

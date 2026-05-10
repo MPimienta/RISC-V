@@ -1,35 +1,6 @@
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date: 04/25/2026 09:48:35 PM
--- Design Name: 
--- Module Name: rom_instructions - DataFlow
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
-----------------------------------------------------------------------------------
-
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
 use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 entity rom_instructions is
     Port (
@@ -37,7 +8,6 @@ entity rom_instructions is
         instruction_addr    :   in std_logic_vector (15 downto 0)   
     );
 end rom_instructions;
-
 
 architecture DataFlow of rom_instructions is
 
@@ -61,17 +31,18 @@ architecture DataFlow of rom_instructions is
         
         9 => x"24C0", -- SW R2, 0(R3) -> LEDs = R2
         10=> x"2501", -- SW R2, 1(R4) -> RAM[1] = R2
-
-        11=> x"71F9", -- JAL 5 (Volver al bucle)
         
-        12 => x"4422", -- LI R2, 0x22 (Cargar un valor de prueba, ej: 34 en decimal)
-        13 => x"24C2", -- SW R2, 2(R3) -> Esto es x"00F0" + 2 = x"00F2"
-
+        -- === INSTRUCCIONES DE PRUEBA ===
+        11 => x"4422", -- LI R2, 0x22 (Cargar un valor de prueba, ej: 34)
+        12 => x"24C2", -- SW R2, 2(R3) -> Escribe en x"00F2"
+        
+        -- === SALTO AL INICIO DEL BUCLE ===
+        13=> x"71F9", -- JAL 5 (Volver al bucle de la línea 5)
+        
         others => x"0000"
     );
 begin
 
     instruction_out <= rom_memory(to_integer(unsigned(instruction_addr)));
-
 
 end DataFlow;

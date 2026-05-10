@@ -7,11 +7,16 @@ entity riscv is
         btn_clk     : in std_logic;
         clk         : in std_logic;
         btn_reset   : in std_logic;
-        swt         : in std_logic_vector (15 downto 0); -- AHORA 16 BITS (Toda la Basys 3)
-        led         : out std_logic_vector (15 downto 0); -- AHORA 16 BITS (Toda la Basys 3)
+        swt         : in std_logic_vector (15 downto 0);
+        led         : out std_logic_vector (15 downto 0);
         seg         : out std_logic_vector (6 downto 0);
         dp          : out std_logic;
-        an          : out std_logic_vector (3 downto 0)
+        an          : out std_logic_vector (3 downto 0);
+        
+        -- CABLES DE DEBUGGING HACIA LA PANTALLA LCD
+        dbg_opcode  : out std_logic_vector (3 downto 0);
+        dbg_reg     : out std_logic_vector (2 downto 0);
+        dbg_val     : out std_logic_vector (15 downto 0)
         );
 end riscv;
 
@@ -62,7 +67,7 @@ component control_unit is
         alu_src_b : out std_logic;
         mem_write  : out std_logic;
         mem_to_reg : out std_logic;
-        ir_en : out std_logic -- ACTUALIZADO
+        ir_en : out std_logic
     );
 end component;
 
@@ -86,7 +91,7 @@ component decoder is
         ram_data_out : in std_logic_vector(15 downto 0); 
         ram_we       : out std_logic;
         switches_in  : in std_logic_vector(15 downto 0);
-        buttons_in   : in std_logic_vector(4 downto 0); -- ACTUALIZADO A 5 BITS
+        buttons_in   : in std_logic_vector(4 downto 0); 
         leds_out     : out std_logic_vector(15 downto 0);
         display_out  : out std_logic_vector(15 downto 0)
     );
@@ -136,7 +141,6 @@ component seven_seg_decoder is
     );
 end component;
 
-    -- SEÑALES INTERNAS (TODAS A 16 BITS)
     signal clk_deb       : std_logic; 
     signal pc_current    : std_logic_vector(15 downto 0); 
     signal pc_next       : std_logic_vector(15 downto 0); 
@@ -145,7 +149,7 @@ end component;
     signal pc_load_sig   : std_logic;                    
 
     signal rom_data_raw  : std_logic_vector(15 downto 0);  
-    signal ir_register   : std_logic_vector(15 downto 0); -- REGISTRO ÚNICO 16 BITS
+    signal ir_register   : std_logic_vector(15 downto 0); 
     signal ctrl_ir_en    : std_logic;                    
 
     signal ctrl_reg_write : std_logic;
@@ -230,7 +234,7 @@ begin
         ram_data_out  => ram_data_raw,
         ram_we        => dec_ram_we,
         switches_in   => swt,
-        buttons_in    => "00000", -- Simulamos que no se pulsan botones de momento
+        buttons_in    => "00000", -- Se simula que no se pulsan botones
         leds_out      => led,        
         display_out   => display_val
     );
@@ -241,7 +245,7 @@ begin
 
     inst_Branch: branch_adder port map (pc_in => pc_current, imm_in => imm_ext_out, target_out => branch_target);
             
-    pc_next <= alu_res_out when ir_register(15 downto 12) = "1000" else branch_target; -- Opcode 1000 es JALR
+    pc_next <= alu_res_out when ir_register(15 downto 12) = "1000" else branch_target; -- JALR
    
    inst_Seg7: seven_seg_decoder port map (
         clk      => clk,         
@@ -251,5 +255,9 @@ begin
         dp       => dp,
         an       => an
     );
+    
+    dbg_opcode <= ir_register(15 downto 12);
+    dbg_reg <= ir_register(11 downto 9);
+    dbg_val <= alu_res_out;
     
 end Structural;
