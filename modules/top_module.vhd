@@ -2,9 +2,9 @@
 -- Company: 
 -- Engineer: 
 -- 
--- Create Date: 10.05.2026 14:48:20
+-- Create Date: 10.05.2026 14:47:04
 -- Design Name: 
--- Module Name: tb_top_level - Behavioral
+-- Module Name: top_level - Behavioral
 -- Project Name: 
 -- Target Devices: 
 -- Tool Versions: 
@@ -31,11 +31,11 @@ use IEEE.STD_LOGIC_1164.ALL;
 --library UNISIM;
 --use UNISIM.VComponents.all;
 
-entity tb_top_level is
+entity top_level is
 --  Port ( );
-end tb_top_level;
+end top_level;
 
-architecture Behavioral of tb_top_level is
+architecture Behavioral of top_level is
 
 begin
 
