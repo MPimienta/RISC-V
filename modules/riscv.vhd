@@ -11,9 +11,7 @@ entity riscv is
         led         : out std_logic_vector (15 downto 0); -- AHORA 16 BITS (Toda la Basys 3)
         seg         : out std_logic_vector (6 downto 0);
         dp          : out std_logic;
-        an          : out std_logic_vector (3 downto 0);
-        sda         : inout std_logic;
-        scl         : inout std_logic
+        an          : out std_logic_vector (3 downto 0)
         );
 end riscv;
 
@@ -90,8 +88,7 @@ component decoder is
         switches_in  : in std_logic_vector(15 downto 0);
         buttons_in   : in std_logic_vector(4 downto 0); -- ACTUALIZADO A 5 BITS
         leds_out     : out std_logic_vector(15 downto 0);
-        display_out  : out std_logic_vector(15 downto 0);
-        lcd_we_out   : out std_logic
+        display_out  : out std_logic_vector(15 downto 0)
     );
 end component;
 
@@ -139,38 +136,6 @@ component seven_seg_decoder is
     );
 end component;
 
-component i2c_master is
-    Generic (
-        input_clk : integer := 100_000_000;
-        bus_clk   : integer := 100_000
-    );
-    Port (
-        clk       : in     std_logic;
-        reset     : in     std_logic;
-        ena       : in     std_logic;
-        addr      : in     std_logic_vector(6 downto 0);
-        rw        : in     std_logic;
-        data_wr   : in     std_logic_vector(7 downto 0);
-        busy      : out    std_logic;
-        ack_error : out    std_logic;
-        sda       : inout  std_logic;
-        scl       : inout  std_logic
-    );
-end component;
-    
-component lcd_controller is
-    Port (
-        clk      : in  std_logic;
-        reset    : in  std_logic;
-        lcd_we   : in  std_logic;
-        data_in  : in  std_logic_vector(15 downto 0);
-        i2c_ena  : out std_logic;
-        i2c_data : out std_logic_vector(7 downto 0);
-        i2c_busy : in  std_logic;
-        i2c_addr : out std_logic_vector(6 downto 0)
-    );
-end component;  
-
     -- SEÑALES INTERNAS (TODAS A 16 BITS)
     signal clk_deb       : std_logic; 
     signal pc_current    : std_logic_vector(15 downto 0); 
@@ -205,12 +170,6 @@ end component;
     signal display_val      : std_logic_vector(15 downto 0); 
 
     signal w_rs2_addr : std_logic_vector(2 downto 0);
-    
-    signal dec_lcd_we  : std_logic;
-    signal w_i2c_ena   : std_logic;
-    signal w_i2c_data  : std_logic_vector(7 downto 0);
-    signal w_i2c_busy  : std_logic;
-    signal w_i2c_addr  : std_logic_vector(6 downto 0);
 begin
 
     deb_clk: debouncer port map (clk => clk, reset => btn_reset, btn_in => btn_clk, btn_out => clk_deb);
@@ -219,36 +178,6 @@ begin
     
     inst_ROM: rom_instructions port map (instruction_addr => pc_current, instruction_out => rom_data_raw);
     
-    inst_I2C: i2c_master
-        generic map (
-            input_clk => 100000000, -- 100MHz de la Basys 3
-            bus_clk   => 100000     -- 100kHz estándar para I2C
-        )
-        port map (
-            clk       => clk,
-            reset     => btn_reset,
-            ena       => w_i2c_ena,
-            addr      => w_i2c_addr,
-            rw        => '0',         -- Siempre escribimos en la LCD
-            data_wr   => w_i2c_data,
-            busy      => w_i2c_busy,
-            ack_error => open,        -- Podemos dejarlo abierto por ahora
-            sda       => sda,         -- Pin físico directo al puerto PMOD
-            scl       => scl          -- Pin físico directo al puerto PMOD
-        );
-        
-    inst_LCD: lcd_controller
-        port map (
-            clk      => clk,
-            reset    => btn_reset,
-            lcd_we   => dec_lcd_we,   -- Viene de la lógica del Decoder
-            data_in  => reg_rs2_data, -- El valor que queremos mostrar (normalmente R2 o R1)
-            i2c_ena  => w_i2c_ena,
-            i2c_data => w_i2c_data,
-            i2c_busy => w_i2c_busy,
-            i2c_addr => w_i2c_addr
-        );
-        
     -- REGISTRO DE INSTRUCCIÓN (1 CICLO)
     process(clk_deb)
     begin
@@ -303,8 +232,7 @@ begin
         switches_in   => swt,
         buttons_in    => "00000", -- Simulamos que no se pulsan botones de momento
         leds_out      => led,        
-        display_out   => display_val,
-        lcd_we_out        => dec_lcd_we
+        display_out   => display_val
     );
 
     inst_RAM: ram_data port map (clk => clk_deb, write_en => dec_ram_we, data_addr => alu_res_out, data_in => reg_rs2_data, data_out => ram_data_raw);
