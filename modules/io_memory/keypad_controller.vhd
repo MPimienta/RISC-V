@@ -43,7 +43,8 @@ end keypad_controller;
 
 architecture Behavioral of keypad_controller is
 
-    constant PRESCALER_MAX : integer := 100000;
+    --constant PRESCALER_MAX : integer := 100000;
+    constant PRESCALER_MAX : integer := 10;
     signal prescaler : integer range 0 to PRESCALER_MAX := 0;
     signal scan_tick : std_logic := '0';
 
