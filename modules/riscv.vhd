@@ -3,18 +3,24 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
 entity riscv is
-Port (
-    btn_clk     : in std_logic;
-    clk         : in std_logic;
-    btn_reset   : in std_logic;
-    swt         : in std_logic_vector (15 downto 0);
-    led         : out std_logic_vector (15 downto 0);
-    seg         : out std_logic_vector (6 downto 0);
-    dp          : out std_logic;
-    an          : out std_logic_vector (3 downto 0);
-    keypad_col : in std_logic_vector(3 downto 0);
-    keypad_row : out std_logic_vector(3 downto 0)
-);
+    Port ( 
+        btn_clk     : in std_logic;
+        clk         : in std_logic;
+        btn_reset   : in std_logic;
+        swt         : in std_logic_vector (15 downto 0);
+        led         : out std_logic_vector (15 downto 0);
+        seg         : out std_logic_vector (6 downto 0);
+        dp          : out std_logic;
+        an          : out std_logic_vector (3 downto 0);
+      
+        keypad_col : in std_logic_vector(3 downto 0);
+        keypad_row : out std_logic_vector(3 downto 0);
+        
+        -- CABLES DE DEBUGGING HACIA LA PANTALLA LCD
+        dbg_opcode  : out std_logic_vector (3 downto 0);
+        dbg_reg     : out std_logic_vector (2 downto 0);
+        dbg_val     : out std_logic_vector (15 downto 0)
+        );
 end riscv;
 
 architecture Structural of riscv is
@@ -91,7 +97,7 @@ component decoder is
         buttons_in    : in std_logic_vector(4 downto 0);
         keypad_data_in: in std_logic_vector(15 downto 0);
         leds_out      : out std_logic_vector(15 downto 0);
-        display_out   : out std_logic_vector(15 downto 0)
+        display_out   : out std_logic_vector(15 downto 0);
     );
 end component;
 
