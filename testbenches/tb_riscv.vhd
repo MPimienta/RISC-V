@@ -45,21 +45,21 @@ begin
 
     stim_proc: process
     begin
-        -- 1. Secuencia de encendido
+        swt(2) <= '1';
+        swt(4) <= '1';
+        swt(6) <= '1';
         btn_reset <= '1';
         wait for 100 ns;
         btn_reset <= '0';
         wait for 100 ns;
 
-        -- 2. Damos 60 pulsaciones para que le dé tiempo a dar unas 3 o 4 vueltas al bucle
-        for i in 1 to 60 loop
+        for i in 1 to 100 loop
             btn_clk <= '1';
             wait for 200 ns; 
             btn_clk <= '0';
             wait for 200 ns;
         end loop;
 
-        -- Fin de la simulación
         wait;
     end process;
 end behavior;
