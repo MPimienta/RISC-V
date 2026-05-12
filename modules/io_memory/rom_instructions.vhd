@@ -14,31 +14,24 @@ architecture DataFlow of rom_instructions is
     type instruction_array is array (0 to 255) of STD_LOGIC_VECTOR(15 downto 0); -- 256 espacios de 8 bits
     
     -- De momento se deja hardcodeado, pero hay que investigar cómo cargar un programa en memoria.
-    constant rom_memory   :   instruction_array   := (
-        -- === SETUP (Inicialización) ===
-        0 => x"4201", -- LI R1, 1    
-        1 => x"440A", -- LI R2, 10   
-        2 => x"46F0", -- LI R3, 0xF0 (LEDs)
-        3 => x"4800", -- LI R4, 0x00 (RAM)
-        4 => x"4A05", -- LI R5, 5    
+constant rom_memory   :   instruction_array   := (
+        0  => x"46E2", -- LI r3, 226      (NUEVA Dir. Teclado: 0xE2)
+        1  => x"48F0", -- LI r4, 240      (NUEVA Dir. LEDs: 0xF0)
+        2  => x"4E10", -- LI r7, 16       (Mascara Valid Bit)
+        3  => x"1AC0", -- LW r5, r3, 0    (Leer Teclado)
+        4  => x"0D7A", -- AND r6, r5, r7  (Aislar Valid)
+        5  => x"5C3D", -- BEQ r6, r0, -3  (Loop si no hay pulsacion)
+        6  => x"4E0F", -- LI r7, 15       (Mascara Data)
+        7  => x"0D7A", -- AND r6, r5, r7  (Extraer Tecla)
+        8  => x"2D00", -- SW r6, r4, 0    (Escribir tecla en LEDs)
+        9  => x"4E10", -- LI r7, 16       (Mascara Valid Bit)
+        10 => x"1AC0", -- LW r5, r3, 0    (Leer Teclado otra vez)
+        11 => x"0D7A", -- AND r6, r5, r7  (Aislar Valid)
+        12 => x"6C3D", -- BNE r6, r0, -3  (Loop mientras siga pulsado)
+        13 => x"5035", -- BEQ r0, r0, -11 (Volver al inicio)
+        14 => x"0000", -- NOP
+        15 => x"0000",  -- NOP
 
-        -- === BUCLE PRINCIPAL ===
-        5 => x"0248", -- ADD R1, R1, R1 (Duplicar)
-        6 => x"22C0", -- SW R1, 0(R3) -> LEDs = R1
-        7 => x"2300", -- SW R1, 0(R4) -> RAM[0] = R1
-
-        8 => x"0528", -- ADD R2, R2, R5 (Sumar 5)
-        
-        9 => x"24C0", -- SW R2, 0(R3) -> LEDs = R2
-        10=> x"2501", -- SW R2, 1(R4) -> RAM[1] = R2
-        
-        -- === INSTRUCCIONES DE PRUEBA ===
-        11 => x"4422", -- LI R2, 0x22 (Cargar un valor de prueba, ej: 34)
-        12 => x"24C2", -- SW R2, 2(R3) -> Escribe en x"00F2"
-        
-        -- === SALTO AL INICIO DEL BUCLE ===
-        13=> x"71F9", -- JAL 5 (Volver al bucle de la línea 5)
-        
         others => x"0000"
     );
 begin
