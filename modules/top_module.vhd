@@ -13,6 +13,10 @@ entity top_level is
         dp          : out std_logic;
         an          : out std_logic_vector (3 downto 0);
         
+        -- Pines físicos para el Teclado Matricial
+        keypad_col  : in std_logic_vector(3 downto 0);
+        keypad_row  : out std_logic_vector(3 downto 0);
+        
         -- Pines físicos para la pantalla LCD I2C
         sda         : inout std_logic;
         scl         : inout std_logic
@@ -32,7 +36,11 @@ architecture Structural of top_level is
             dp          : out std_logic;
             an          : out std_logic_vector (3 downto 0);
             
-            -- NUEVOS CABLES CHIVATOS PARA EL LCD
+            -- Teclado
+            keypad_col  : in std_logic_vector(3 downto 0);
+            keypad_row  : out std_logic_vector(3 downto 0);
+            
+            -- Cables chivatos para el LCD
             dbg_opcode  : out std_logic_vector (3 downto 0);
             dbg_reg     : out std_logic_vector (2 downto 0);
             dbg_val     : out std_logic_vector (15 downto 0)
@@ -74,13 +82,15 @@ begin
         seg         => seg,
         dp          => dp,
         an          => an,
+        keypad_col  => keypad_col,
+        keypad_row  => keypad_row,
         dbg_opcode  => w_dbg_opcode,
         dbg_reg     => w_dbg_reg,
         dbg_val     => w_dbg_val
     );
 
     Inst_Display: display_subsystem port map (
-        clk         => clk,
+        clk         => clk, -- Reloj principal de 100MHz para el I2C
         reset       => btn_reset,
         cpu_opcode  => w_opcode_padded,
         cpu_reg     => w_reg_padded,

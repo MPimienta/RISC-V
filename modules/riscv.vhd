@@ -12,15 +12,16 @@ entity riscv is
         seg         : out std_logic_vector (6 downto 0);
         dp          : out std_logic;
         an          : out std_logic_vector (3 downto 0);
-      
-        keypad_col : in std_logic_vector(3 downto 0);
-        keypad_row : out std_logic_vector(3 downto 0);
+       
+        -- Teclado
+        keypad_col  : in std_logic_vector(3 downto 0);
+        keypad_row  : out std_logic_vector(3 downto 0);
         
-        -- CABLES DE DEBUGGING HACIA LA PANTALLA LCD
+        -- Cables chivatos (Debugging) hacia el TOP LEVEL
         dbg_opcode  : out std_logic_vector (3 downto 0);
         dbg_reg     : out std_logic_vector (2 downto 0);
         dbg_val     : out std_logic_vector (15 downto 0)
-        );
+    );
 end riscv;
 
 architecture Structural of riscv is
@@ -97,7 +98,7 @@ component decoder is
         buttons_in    : in std_logic_vector(4 downto 0);
         keypad_data_in: in std_logic_vector(15 downto 0);
         leds_out      : out std_logic_vector(15 downto 0);
-        display_out   : out std_logic_vector(15 downto 0);
+        display_out   : out std_logic_vector(15 downto 0)
     );
 end component;
 
@@ -174,7 +175,7 @@ component hazard_unit is
     );
 end component;
 
--- Registros de Pipeline (Componentes internos)
+-- Registros de Pipeline
 component if_id_register is
     Port ( 
         clk : in std_logic; reset : in std_logic; en : in std_logic; flush : in std_logic;
@@ -223,7 +224,7 @@ component mem_wb_register is
     );
 end component;
 
-component  keypad_controller is
+component keypad_controller is
     Port (
         clk         : in  STD_LOGIC; 
         reset       : in  STD_LOGIC;
@@ -231,7 +232,7 @@ component  keypad_controller is
         keypad_row  : out STD_LOGIC_VECTOR (3 downto 0); 
         data_out    : out STD_LOGIC_VECTOR (15 downto 0) 
     );
-end component ;
+end component;
 
 signal keypad_data : std_logic_vector(15 downto 0);
 
@@ -280,8 +281,7 @@ signal hz_pc_en, hz_if_id_en, hz_if_id_flush, hz_id_ex_flush : std_logic;
 
 begin
 
-inst_Keypad: entity work.keypad_controller
-port map (
+inst_Keypad: keypad_controller port map (
     clk => clk,
     reset => btn_reset,
     keypad_col => keypad_col,
@@ -442,5 +442,9 @@ reg_mem_wb: mem_wb_register port map (
 -- 5. WRITEBACK (WB)
 wb_write_data <= mem_wb_ram_data when mem_wb_mem_to_reg = '1' else mem_wb_alu_res;
 
+-- CONEXIONES DE LOS CABLES CHIVATOS (DEBUGGING) HACIA EL TOP LEVEL
+dbg_opcode <= if_id_inst(15 downto 12);
+dbg_reg    <= id_rd_addr;
+dbg_val    <= wb_write_data;
 
 end Structural;

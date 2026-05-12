@@ -2,11 +2,12 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
 entity tb_top_level is
+-- Un testbench no tiene puertos
 end tb_top_level;
 
 architecture Behavioral of tb_top_level is
 
-    -- Declaración de nuestro componente principal (La Placa Base)
+    -- 1. Declaración del componente Top Level
     component top_level
         Port ( 
             clk         : in std_logic;
@@ -17,38 +18,36 @@ architecture Behavioral of tb_top_level is
             seg         : out std_logic_vector (6 downto 0);
             dp          : out std_logic;
             an          : out std_logic_vector (3 downto 0);
+            keypad_col  : in std_logic_vector(3 downto 0);
+            keypad_row  : out std_logic_vector(3 downto 0);
             sda         : inout std_logic;
             scl         : inout std_logic
         );
     end component;
 
-    -- Entradas
-    signal clk       : std_logic := '0';
-    signal btn_reset : std_logic := '0';
-    signal btn_clk   : std_logic := '0';
-    signal swt       : std_logic_vector(15 downto 0) := (others => '0');
-
-    -- Salidas
-    signal led       : std_logic_vector(15 downto 0);
-    signal seg       : std_logic_vector(6 downto 0);
-    signal dp        : std_logic;
-    signal an        : std_logic_vector(3 downto 0);
+    -- 2. Señales de estímulo e interconexión
+    signal clk        : std_logic := '0';
+    signal btn_reset  : std_logic := '0';
+    signal btn_clk    : std_logic := '0';
+    signal swt        : std_logic_vector (15 downto 0) := (others => '0');
+    signal led        : std_logic_vector (15 downto 0);
+    signal seg        : std_logic_vector (6 downto 0);
+    signal dp         : std_logic;
+    signal an         : std_logic_vector (3 downto 0);
     
-    -- Bus I2C
-    signal sda       : std_logic;
-    signal scl       : std_logic;
+    -- Teclado
+    signal keypad_col : std_logic_vector(3 downto 0) := "1111"; -- Pull-up por defecto
+    signal keypad_row : std_logic_vector(3 downto 0);
 
-    -- Periodo del reloj principal (100 MHz de la placa)
-    constant clk_period : time := 10 ns;
+    -- I2C (Pull-ups simulados con 'H')
+    signal sda : std_logic := 'H';
+    signal scl : std_logic := 'H';
+
+    constant clk_period : time := 10 ns; -- 100 MHz
 
 begin
 
-    -- Simulamos las resistencias Pull-Up de la placa física para el bus I2C
-    -- 'H' significa "1 lógico débil". El Master I2C podrá forzarlo a '0' cuando transmita.
-    sda <= 'H';
-    scl <= 'H';
-
-    -- Instanciación del sistema completo
+    -- 3. Instanciación del Top Level
     uut: top_level Port map (
         clk         => clk,
         btn_reset   => btn_reset,
@@ -58,41 +57,77 @@ begin
         seg         => seg,
         dp          => dp,
         an          => an,
+        keypad_col  => keypad_col,
+        keypad_row  => keypad_row,
         sda         => sda,
         scl         => scl
     );
 
-    -- Generador del reloj continuo de 100 MHz
+    -- 4. Generador del reloj principal (100 MHz)
     clk_process :process
     begin
-        clk <= '0';
-        wait for clk_period/2;
-        clk <= '1';
-        wait for clk_period/2;
+        clk <= '0'; wait for clk_period/2;
+        clk <= '1'; wait for clk_period/2;
     end process;
 
-    -- Proceso de estímulos (El "dedo" que pulsa los botones)
+    -- 5. Proceso principal de estímulos (El "Usuario Humano")
     stim_proc: process
     begin
-        -- 1. Secuencia de Reset inicial
+        -- Estado inicial de interruptores
+        swt <= x"0054"; -- Valor de ejemplo
+        
+        -- RESET GENERAL DEL SISTEMA
         btn_reset <= '1';
         wait for 100 ns;
         btn_reset <= '0';
-        wait for 100 ns;
+        wait for 500 ns;
+        
+        -- Dejamos que los controladores automáticos (LCD Power Up, Keypad Scan) arranquen
+        wait for 2000 ns;
 
-        -- 2. Damos suficientes pulsaciones manuales para ver el envío I2C.
-        -- NOTA: El I2C es LENTÍSIMO comparado con la CPU. Haremos bastantes ciclos.
-        for i in 1 to 200 loop
+        -------------------------------------------------------------
+        -- ACCIÓN 1: SIMULAR PULSACIÓN EN EL TECLADO (Tecla '5')
+        -- Fila 1 (bit 1) y Columna 1 (bit 1) -> "1101"
+        -------------------------------------------------------------
+        -- Esperamos a que el escáner del teclado pase por la Fila 1
+        wait until keypad_row = "1101";
+        
+        -- ¡Pulsamos el botón físico!
+        keypad_col <= "1101";
+
+        -------------------------------------------------------------
+        -- ACCIÓN 2: EJECUTAR LA CPU (Reloj manual)
+        -------------------------------------------------------------
+        -- Avanzamos la CPU 20 ciclos para que lea el teclado,
+        -- guarde el dato, y mande los valores al display_manager.
+        for i in 1 to 20 loop
             btn_clk <= '1';
-            wait for 200 ns; 
+            wait for 50 ns; 
             btn_clk <= '0';
-            wait for 200 ns;
+            wait for 50 ns;
+        end loop;
+        
+        -------------------------------------------------------------
+        -- ACCIÓN 3: SOLTAR LA TECLA Y VER EL I2C TRABAJAR
+        -------------------------------------------------------------
+        -- Soltamos el botón del teclado
+        keypad_col <= "1111";
+        wait for 200 ns;
+        
+        -- Seguimos dándole al reloj de la CPU de vez en cuando, 
+        -- mientras observamos en la simulación cómo el controlador LCD 
+        -- empieza a mover las señales SDA y SCL para pintar en pantalla.
+        for i in 1 to 50 loop
+            btn_clk <= '1';
+            wait for 100 ns; 
+            btn_clk <= '0';
+            wait for 100 ns;
+            
+            -- El I2C y el Display trabajan con 'clk' automático, no necesitan 'btn_clk', 
+            -- pero la CPU necesita btn_clk para seguir su bucle.
         end loop;
 
-        -- Dejamos que el reloj interno de 100MHz procese la transmisión de la pantalla
-        wait for 100 ms; 
-
-        -- Fin de la simulación
+        -- Fin de la prueba
         wait;
     end process;
 
