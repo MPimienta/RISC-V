@@ -44,7 +44,7 @@ architecture DataFlow of rom_instructions is
     type instruction_array is array (0 to 255) of STD_LOGIC_VECTOR(15 downto 0); -- 256 espacios de 8 bits
     
     -- De momento se deja hardcodeado, pero hay que investigar cómo cargar un programa en memoria.
-constant MY_PROGRAM : rom_array := (
+constant rom_memory   :   instruction_array   := (
         0  => x"46E2", -- LI r3, 226      (NUEVA Dir. Teclado: 0xE2)
         1  => x"48F0", -- LI r4, 240      (NUEVA Dir. LEDs: 0xF0)
         2  => x"4E10", -- LI r7, 16       (Mascara Valid Bit)
@@ -60,8 +60,11 @@ constant MY_PROGRAM : rom_array := (
         12 => x"6C3D", -- BNE r6, r0, -3  (Loop mientras siga pulsado)
         13 => x"5035", -- BEQ r0, r0, -11 (Volver al inicio)
         14 => x"0000", -- NOP
-        15 => x"0000"  -- NOP
+        15 => x"0000",  -- NOP
+
+        others => x"0000"
     );
+begin
 
     instruction_out <= rom_memory(to_integer(unsigned(instruction_addr)));
 
