@@ -1,0 +1,16 @@
+0  => x"46E2", -- LI r3, 226      (NUEVA Dir. Teclado: 0xE2)
+1  => x"48F0", -- LI r4, 240      (NUEVA Dir. LEDs: 0xF0)
+2  => x"4E10", -- LI r7, 16       (Mascara Valid Bit)
+3  => x"1AC0", -- LW r5, r3, 0    (Leer Teclado)
+4  => x"0D7A", -- AND r6, r5, r7  (Aislar Valid)
+5  => x"5C3D", -- BEQ r6, r0, -3  (Loop si no hay pulsacion)
+6  => x"4E0F", -- LI r7, 15       (Mascara Data)
+7  => x"0D7A", -- AND r6, r5, r7  (Extraer Tecla)
+8  => x"2D00", -- SW r6, r4, 0    (Escribir tecla en LEDs)
+9  => x"4E10", -- LI r7, 16       (Mascara Valid Bit)
+10 => x"1AC0", -- LW r5, r3, 0    (Leer Teclado otra vez)
+11 => x"0D7A", -- AND r6, r5, r7  (Aislar Valid)
+12 => x"6C3D", -- BNE r6, r0, -3  (Loop mientras siga pulsado)
+13 => x"5035", -- BEQ r0, r0, -11 (Volver al inicio)
+14 => x"0000", -- NOP
+15 => x"0000",  -- NOP
