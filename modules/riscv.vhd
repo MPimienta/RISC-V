@@ -4,14 +4,16 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity riscv is
 Port (
-btn_clk     : in std_logic;
-clk         : in std_logic;
-btn_reset   : in std_logic;
-swt         : in std_logic_vector (15 downto 0);
-led         : out std_logic_vector (15 downto 0);
-seg         : out std_logic_vector (6 downto 0);
-dp          : out std_logic;
-an          : out std_logic_vector (3 downto 0)
+    btn_clk     : in std_logic;
+    clk         : in std_logic;
+    btn_reset   : in std_logic;
+    swt         : in std_logic_vector (15 downto 0);
+    led         : out std_logic_vector (15 downto 0);
+    seg         : out std_logic_vector (6 downto 0);
+    dp          : out std_logic;
+    an          : out std_logic_vector (3 downto 0);
+    keypad_col : in std_logic_vector(3 downto 0);
+    keypad_row : out std_logic_vector(3 downto 0)
 );
 end riscv;
 
@@ -214,6 +216,18 @@ component mem_wb_register is
     );
 end component;
 
+component  keypad_controller is
+    Port (
+        clk         : in  STD_LOGIC; 
+        reset       : in  STD_LOGIC;
+        keypad_col  : in  STD_LOGIC_VECTOR (3 downto 0); 
+        keypad_row  : out STD_LOGIC_VECTOR (3 downto 0); 
+        data_out    : out STD_LOGIC_VECTOR (15 downto 0) 
+    );
+end component ;
+
+signal keypad_data : std_logic_vector(15 downto 0);
+
 -- Señales internas
 signal clk_deb : std_logic;
 signal display_val : std_logic_vector(15 downto 0);
@@ -258,6 +272,15 @@ signal hz_pc_en, hz_if_id_en, hz_if_id_flush, hz_id_ex_flush : std_logic;
 
 
 begin
+
+inst_Keypad: entity work.keypad_controller
+port map (
+    clk => clk,
+    reset => btn_reset,
+    keypad_col => keypad_col,
+    keypad_row => keypad_row,
+    data_out => keypad_data
+);
 
 -- 0. Reloj y Visualización
 deb_clk: debouncer port map (clk => clk, reset => btn_reset, btn_in => btn_clk, btn_out => clk_deb);
