@@ -89,6 +89,7 @@ component decoder is
         ram_we        : out std_logic;
         switches_in   : in std_logic_vector(15 downto 0);
         buttons_in    : in std_logic_vector(4 downto 0);
+        keypad_data_in: in std_logic_vector(15 downto 0);
         leds_out      : out std_logic_vector(15 downto 0);
         display_out   : out std_logic_vector(15 downto 0)
     );
@@ -411,7 +412,9 @@ inst_Decoder: decoder port map (
     clk => clk_deb, reset => btn_reset,
     cpu_addr => ex_mem_alu_res, cpu_data_in => ex_mem_rs2_data, cpu_mem_write => ex_mem_mem_write,
     cpu_data_out => mem_dec_data_out, ram_data_out => mem_ram_data_out, ram_we => dec_ram_we,
-    switches_in => swt, buttons_in => "00000", leds_out => led, display_out => open
+    switches_in => swt, buttons_in => "00000", 
+    keypad_data_in => keypad_data,
+    leds_out => led, display_out => open
 );
 
 inst_RAM: ram_data port map (
