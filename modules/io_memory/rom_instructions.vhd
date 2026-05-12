@@ -45,22 +45,29 @@ architecture DataFlow of rom_instructions is
     
     -- De momento se deja hardcodeado, pero hay que investigar cómo cargar un programa en memoria.
 constant MY_PROGRAM : rom_array := (
-        0  => x"4670", -- LI r3, 112      (Dir. Teclado)
-        1  => x"48F1", -- LI r4, 241      (Dir. 7-Seg)
-        2  => x"4E10", -- LI r7, 16       (Mascara Valid Bit)
-        3  => x"1AC0", -- LW r5, r3, 0    (Leer Teclado)
-        4  => x"0DFA", -- AND r6, r5, r7  (Aislar Valid)
-        5  => x"5C3D", -- BEQ r6, r0, -3  (Loop si no hay pulsacion)
-        6  => x"4E0F", -- LI r7, 15       (Mascara Data)
-        7  => x"0DFA", -- AND r6, r5, r7  (Extraer Tecla)
-        8  => x"2C00", -- SW r6, r4, 0    (Escribir a 7-Seg)
-        9  => x"4E10", -- LI r7, 16       (Mascara Valid Bit)
-        10 => x"1AC0", -- LW r5, r3, 0    (Leer Teclado otra vez)
-        11 => x"0DFA", -- AND r6, r5, r7  (Aislar Valid)
-        12 => x"6C3D", -- BNE r6, r0, -3  (Loop mientras siga pulsado)
-        13 => x"5035", -- BEQ r0, r0, -11 (Volver al inicio)
-        14 => x"0000", -- NOP
-        15 => x"0000"  -- NOP
+# --- INICIALIZACIÓN ---
+0:  LI r3, 226       # r3 = 0xE2 (Dir. Teclado)
+1:  LI r4, 240       # r4 = 0xF0 (Dir. LEDs)
+
+# --- ESPERAR PULSACIÓN ---
+2:  LI r7, 16        # r7 = 16 (Máscara para el Bit 4 'Valid')
+3:  LW r5, r3, 0     # r5 = Memoria[r3] (Leer Teclado)
+4:  AND r6, r5, r7   # r6 = r5 AND r7 (Aislar el Bit 4)
+5:  BEQ r6, r0, -3   # Si r6 == 0, salta -3 (vuelve a la línea 2)
+
+# --- PROCESAR TECLA ---
+6:  LI r7, 15        # r7 = 15 (Máscara para aislar los bits 3 a 0)
+7:  AND r6, r5, r7   # r6 = r5 AND 15 (Nos quedamos con el valor de la tecla)
+8:  SW r6, r4, 0     # Memoria[r4] = r6 (¡Escribir en los LEDs!)
+
+# --- ESPERAR A QUE SUELTE LA TECLA ---
+9:  LI r7, 16        # r7 = 16
+10: LW r5, r3, 0     # r5 = Leer Teclado
+11: AND r6, r5, r7   # r6 = Aislar el Bit Valid
+12: BNE r6, r0, -3   # Si r6 != 0 (sigue pulsado), salta -3 (vuelve a la línea 9)
+
+# --- REPETIR CICLO ---
+13: BEQ r0, r0, -11  # Salto incondicional al inicio (vuelve a la línea 2)
     );
 
     instruction_out <= rom_memory(to_integer(unsigned(instruction_addr)));
