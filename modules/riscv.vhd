@@ -178,7 +178,7 @@ component hazard_unit is
     );
 end component;
 
--- Registros de Pipeline (Componentes internos)
+-- Registros de Pipeline
 component if_id_register is
     Port ( 
         clk : in std_logic; reset : in std_logic; en : in std_logic; flush : in std_logic;
@@ -227,7 +227,7 @@ component mem_wb_register is
     );
 end component;
 
-component  keypad_controller is
+component keypad_controller is
     Port (
         clk         : in  STD_LOGIC; 
         reset       : in  STD_LOGIC;
@@ -235,7 +235,7 @@ component  keypad_controller is
         keypad_row  : out STD_LOGIC_VECTOR (3 downto 0); 
         data_out    : out STD_LOGIC_VECTOR (15 downto 0) 
     );
-end component ;
+end component;
 
 signal keypad_data : std_logic_vector(15 downto 0);
 
@@ -297,8 +297,7 @@ signal w_i2c_busy     : std_logic;
 
 begin
 
-inst_Keypad: entity work.keypad_controller
-port map (
+inst_Keypad: keypad_controller port map (
     clk => clk,
     reset => btn_reset,
     keypad_col => keypad_col,
@@ -495,5 +494,9 @@ reg_mem_wb: mem_wb_register port map (
 -- 5. WRITEBACK (WB)
 wb_write_data <= mem_wb_ram_data when mem_wb_mem_to_reg = '1' else mem_wb_alu_res;
 
+-- CONEXIONES DE LOS CABLES CHIVATOS (DEBUGGING) HACIA EL TOP LEVEL
+dbg_opcode <= if_id_inst(15 downto 12);
+dbg_reg    <= id_rd_addr;
+dbg_val    <= wb_write_data;
 
 end Structural;
