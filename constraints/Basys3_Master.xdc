@@ -42,7 +42,6 @@ set_property IOSTANDARD LVCMOS33 [get_ports {swt[14]}]
 set_property PACKAGE_PIN R2 [get_ports {swt[15]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {swt[15]}]
 
-
 ## LEDs (16)
 set_property PACKAGE_PIN U16 [get_ports {led[0]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {led[0]}]
@@ -77,7 +76,6 @@ set_property IOSTANDARD LVCMOS33 [get_ports {led[14]}]
 set_property PACKAGE_PIN L1 [get_ports {led[15]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {led[15]}]
 
-
 ## 7 segment display
 set_property PACKAGE_PIN W7 [get_ports {seg[0]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {seg[0]}]
@@ -106,13 +104,11 @@ set_property IOSTANDARD LVCMOS33 [get_ports {an[2]}]
 set_property PACKAGE_PIN W4 [get_ports {an[3]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {an[3]}]
 
-
 ## Buttons
 set_property PACKAGE_PIN U18 [get_ports btn_reset]
 set_property IOSTANDARD LVCMOS33 [get_ports btn_reset]
 set_property PACKAGE_PIN T18 [get_ports btn_clk]
 set_property IOSTANDARD LVCMOS33 [get_ports btn_clk]
-
 
 ## Pmod Header JA (Pmod KYPD - Teclado Matricial)
 ## Filas (Salidas)
@@ -129,26 +125,32 @@ set_property IOSTANDARD LVCMOS33 [get_ports {keypad_row[3]}]
 set_property PACKAGE_PIN H1 [get_ports {keypad_col[0]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {keypad_col[0]}]
 set_property PULLUP true [get_ports {keypad_col[0]}]
-
 set_property PACKAGE_PIN K2 [get_ports {keypad_col[1]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {keypad_col[1]}]
 set_property PULLUP true [get_ports {keypad_col[1]}]
-
 set_property PACKAGE_PIN H2 [get_ports {keypad_col[2]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {keypad_col[2]}]
 set_property PULLUP true [get_ports {keypad_col[2]}]
-
 set_property PACKAGE_PIN G3 [get_ports {keypad_col[3]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {keypad_col[3]}]
 set_property PULLUP true [get_ports {keypad_col[3]}]
 
+## Pmod Header JB (Pmod OLED SPI)
+## Fila Superior (Pines 1 a 4)
+set_property PACKAGE_PIN A14 [get_ports oled_cs]
+set_property IOSTANDARD LVCMOS33 [get_ports oled_cs]
+set_property PACKAGE_PIN A16 [get_ports oled_sdin]
+set_property IOSTANDARD LVCMOS33 [get_ports oled_sdin]
+## El pin 3 del Pmod es MISO, pero el módulo no lo usa para devolver datos
+set_property PACKAGE_PIN B16 [get_ports oled_sclk]
+set_property IOSTANDARD LVCMOS33 [get_ports oled_sclk]
 
-## Pmod Header JB (Pantalla LCD I2C)
-## I2C requiere resistencias Pull-Up por hardware, activamos las internas de la FPGA
-set_property PACKAGE_PIN A14 [get_ports lcd_scl]
-set_property IOSTANDARD LVCMOS33 [get_ports lcd_scl]
-set_property PULLUP true [get_ports lcd_scl]
-
-set_property PACKAGE_PIN A16 [get_ports lcd_sda]
-set_property IOSTANDARD LVCMOS33 [get_ports lcd_sda]
-set_property PULLUP true [get_ports lcd_sda]
+## Fila Inferior (Pines 7 a 10)
+set_property PACKAGE_PIN A15 [get_ports oled_dc]
+set_property IOSTANDARD LVCMOS33 [get_ports oled_dc]
+set_property PACKAGE_PIN A17 [get_ports oled_res]
+set_property IOSTANDARD LVCMOS33 [get_ports oled_res]
+set_property PACKAGE_PIN C15 [get_ports oled_vbat]
+set_property IOSTANDARD LVCMOS33 [get_ports oled_vbat]
+set_property PACKAGE_PIN C16 [get_ports oled_vdd]
+set_property IOSTANDARD LVCMOS33 [get_ports oled_vdd]
