@@ -1,21 +1,4 @@
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
-
-entity rom_instructions is
-    Port (
-        instruction_out     :   out std_logic_vector(15 downto 0);
-        instruction_addr    :   in std_logic_vector (15 downto 0)   
-    );
-end rom_instructions;
-
-architecture DataFlow of rom_instructions is
-
-    type instruction_array is array (0 to 255) of STD_LOGIC_VECTOR(15 downto 0); -- 256 espacios de 8 bits
-    
-    -- De momento se deja hardcodeado, pero hay que investigar cómo cargar un programa en memoria.
-    constant rom_memory : instruction_array := (
-        -- INICIALIZACIÓN
+-- INICIALIZACIÓN
         0   => x"4278", -- LI r1, 120
         1   => x"4801", -- LI r4, 1
         2   => x"7466", -- JAL r2, LCD_CMD
@@ -188,11 +171,3 @@ architecture DataFlow of rom_instructions is
         133 => x"0DAA", -- AND r6, r6, r5
         134 => x"6C3D", -- BNE r6, r0, r_rel
         135 => x"8080", -- JALR r0, r2, 0
-
-        others => x"0000"
-    );
-begin
-
-    instruction_out <= rom_memory(to_integer(unsigned(instruction_addr)));
-
-end DataFlow;

@@ -49,27 +49,29 @@ entity registers is
 end registers;
 
 architecture Behavioral of registers is
-    
-    type reg_array is array (0 to 7) of STD_LOGIC_VECTOR(15 downto 0); -- 8 registros de 16 bits
-    
-    signal regs : reg_array := (others => "0000000000000000");
-
+    type reg_array is array (0 to 7) of std_logic_vector(15 downto 0);
+    signal regs : reg_array := (others => x"0000");
 begin
 
-    rs1_data <= regs(to_integer(unsigned(rs1_addr)));
-    rs2_data <= regs(to_integer(unsigned(rs2_addr)));
-
+    -- PROCESO SÍNCRONO: Escritura
     process(clk)
     begin
         if rising_edge(clk) then
             if reset = '1' then
-                regs <= (others => "0000000000000000");
-            elsif reg_write = '1' then
-                if rd_addr /= "000" then
-                    regs(to_integer(unsigned(rd_addr))) <= write_data;
-                end if;
+                regs <= (others => x"0000");
+            elsif reg_write = '1' and rd_addr /= "000" then
+                regs(to_integer(unsigned(rd_addr))) <= write_data;
             end if;
         end if;
     end process;
+
+    -- LECTURA ASÍNCRONA CON BYPASS (Forwarding Interno)
+    -- Si estamos leyendo el mismo registro que estamos escribiendo (y no es r0), 
+    -- sacamos el write_data directamente. Si no, leemos la memoria normal.
+    rs1_data <= write_data when (reg_write = '1' and rd_addr = rs1_addr and rd_addr /= "000") else 
+                regs(to_integer(unsigned(rs1_addr)));
+                
+    rs2_data <= write_data when (reg_write = '1' and rd_addr = rs2_addr and rd_addr /= "000") else 
+                regs(to_integer(unsigned(rs2_addr)));
     
 end Behavioral;

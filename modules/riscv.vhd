@@ -3,25 +3,22 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
 entity riscv is
-    Port ( 
-        btn_clk     : in std_logic;
-        clk         : in std_logic;
-        btn_reset   : in std_logic;
-        swt         : in std_logic_vector (15 downto 0);
-        led         : out std_logic_vector (15 downto 0);
-        seg         : out std_logic_vector (6 downto 0);
-        dp          : out std_logic;
-        an          : out std_logic_vector (3 downto 0);
-       
-        -- Teclado
-        keypad_col  : in std_logic_vector(3 downto 0);
-        keypad_row  : out std_logic_vector(3 downto 0);
-        
-        -- Cables chivatos (Debugging) hacia el TOP LEVEL
-        dbg_opcode  : out std_logic_vector (3 downto 0);
-        dbg_reg     : out std_logic_vector (2 downto 0);
-        dbg_val     : out std_logic_vector (15 downto 0)
-    );
+Port (
+    btn_clk     : in std_logic;
+    clk         : in std_logic;
+    btn_reset   : in std_logic;
+    swt         : in std_logic_vector (15 downto 0);
+    led         : out std_logic_vector (15 downto 0);
+    seg         : out std_logic_vector (6 downto 0);
+    dp          : out std_logic;
+    an          : out std_logic_vector (3 downto 0);
+    --keypad
+    keypad_col : in std_logic_vector(3 downto 0);
+    keypad_row : out std_logic_vector(3 downto 0);
+    -- lcd
+    lcd_sda : inout std_logic;
+    lcd_scl : inout std_logic
+);
 end riscv;
 
 architecture Structural of riscv is
@@ -98,7 +95,13 @@ component decoder is
         buttons_in    : in std_logic_vector(4 downto 0);
         keypad_data_in: in std_logic_vector(15 downto 0);
         leds_out      : out std_logic_vector(15 downto 0);
-        display_out   : out std_logic_vector(15 downto 0)
+        display_out   : out std_logic_vector(15 downto 0);
+        -- lcd
+        lcd_char_out  : out std_logic_vector(7 downto 0);
+        lcd_char_we   : out std_logic;
+        lcd_cmd_out   : out std_logic_vector(7 downto 0);
+        lcd_cmd_we    : out std_logic;
+        lcd_busy      : in  std_logic
     );
 end component;
 
@@ -261,6 +264,8 @@ signal forward_a, forward_b : std_logic_vector(1 downto 0);
 signal alu_mux_a_out, alu_mux_b_out, alu_operando_b, ex_alu_result : std_logic_vector(15 downto 0);
 signal ex_zero_flag, ex_branch_taken : std_logic;
 signal ex_branch_target : std_logic_vector(15 downto 0);
+signal alu_result_internal : std_logic_vector(15 downto 0);
+signal branch_base_addr    : std_logic_vector(15 downto 0);
 
 -- Etapa MEMORY
 signal ex_mem_alu_res, ex_mem_rs2_data : std_logic_vector(15 downto 0);
@@ -277,6 +282,17 @@ signal wb_write_data : std_logic_vector(15 downto 0);
 
 -- Hazards
 signal hz_pc_en, hz_if_id_en, hz_if_id_flush, hz_id_ex_flush : std_logic;
+
+-- LCD
+signal w_lcd_char_out : std_logic_vector(7 downto 0);
+signal w_lcd_char_we  : std_logic;
+signal w_lcd_cmd_out  : std_logic_vector(7 downto 0);
+signal w_lcd_cmd_we   : std_logic;
+signal w_lcd_busy     : std_logic;
+
+signal w_i2c_ena      : std_logic;
+signal w_i2c_data     : std_logic_vector(7 downto 0);
+signal w_i2c_busy     : std_logic;
 
 
 begin
@@ -392,11 +408,15 @@ alu_operando_b <= id_ex_imm when id_ex_alu_src_b = '1' else alu_mux_b_out;
 
 inst_ALU: ALU port map (
     A => alu_mux_a_out, B => alu_operando_b, ALU_Sel => id_ex_alu_sel, 
-    Result => ex_alu_result, Zero => ex_zero_flag
+    Result => alu_result_internal, Zero => ex_zero_flag
 );
 
+ex_alu_result <= std_logic_vector(unsigned(id_ex_pc) + 1) when (id_ex_j_jal = '1' or id_ex_j_jalr = '1') else alu_result_internal;
+
+branch_base_addr <= alu_mux_a_out when id_ex_j_jalr = '1' else id_ex_pc;
+
 inst_BranchAdd: branch_adder port map (
-    pc_in => id_ex_pc, imm_in => id_ex_imm, target_out => ex_branch_target
+    pc_in => branch_base_addr, imm_in => id_ex_imm, target_out => ex_branch_target
 );
 
 ex_branch_taken <= '1' when (id_ex_j_jal = '1' or id_ex_j_jalr = '1' or 
@@ -420,13 +440,45 @@ inst_Decoder: decoder port map (
     cpu_data_out => mem_dec_data_out, ram_data_out => mem_ram_data_out, ram_we => dec_ram_we,
     switches_in => swt, buttons_in => "00000", 
     keypad_data_in => keypad_data,
-    leds_out => led, display_out => open
+    leds_out => led, display_out => open,
+    lcd_char_out => w_lcd_char_out,
+    lcd_char_we  => w_lcd_char_we,
+    lcd_cmd_out  => w_lcd_cmd_out,
+    lcd_cmd_we   => w_lcd_cmd_we,
+    lcd_busy     => w_lcd_busy
 );
 
 inst_RAM: ram_data port map (
     clk => clk_deb, write_en => dec_ram_we, data_addr => ex_mem_alu_res, 
     data_in => ex_mem_rs2_data, data_out => mem_ram_data_out
 );
+
+inst_LCD: entity work.lcd_controller
+    port map (
+        clk        => clk,
+        reset      => btn_reset,
+        char_in    => w_lcd_char_out,
+        char_we    => w_lcd_char_we,
+        cmd_in     => w_lcd_cmd_out,
+        cmd_we     => w_lcd_cmd_we,
+        busy       => w_lcd_busy,
+        i2c_ena    => w_i2c_ena,
+        i2c_data   => w_i2c_data,
+        i2c_busy   => w_i2c_busy
+    );
+
+inst_I2C: entity work.i2c_master
+    port map (
+        clk        => clk,
+        reset      => btn_reset,
+        ena        => w_i2c_ena,
+        addr       => "0100111", -- Dirección típica PCF8574 (ajusta si tu placa usa 0x3F u otra)
+        rw         => '0',
+        data_wr    => w_i2c_data,
+        busy       => w_i2c_busy,
+        sda        => lcd_sda,
+        scl        => lcd_scl
+    );
 
 mem_cpu_data_in <= mem_dec_data_out;
 

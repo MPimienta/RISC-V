@@ -29,34 +29,47 @@ end tb_decoder;
 architecture behavioral of tb_decoder is
 
     component decoder
-        Port (
-            clk          : in std_logic;
-            reset        : in std_logic;
-            cpu_addr     : in std_logic_vector(7 downto 0);
-            cpu_data_in  : in std_logic_vector(7 downto 0);
-            cpu_mem_write: in std_logic;
-            cpu_data_out : out std_logic_vector(7 downto 0);
-            ram_data_out : in std_logic_vector(7 downto 0);
-            ram_we       : out std_logic;
-            switches_in  : in std_logic_vector(7 downto 0);
-            buttons_in   : in std_logic_vector(7 downto 0);
-            leds_out     : out std_logic_vector(7 downto 0);
-            display_out  : out std_logic_vector(7 downto 0)
-        );
+        Port ( 
+        clk           : in std_logic;
+        reset         : in std_logic;
+        cpu_addr      : in std_logic_vector(15 downto 0);
+        cpu_data_in   : in std_logic_vector(15 downto 0); 
+        cpu_mem_write : in std_logic;
+        cpu_data_out  : out std_logic_vector(15 downto 0);
+        ram_data_out  : in std_logic_vector(15 downto 0); 
+        ram_we        : out std_logic;
+        switches_in   : in std_logic_vector(15 downto 0);
+        buttons_in    : in std_logic_vector(4 downto 0);
+        keypad_data_in: in std_logic_vector(15 downto 0);
+        leds_out      : out std_logic_vector(15 downto 0);
+        display_out   : out std_logic_vector(15 downto 0);
+        -- lcd
+        lcd_char_out  : out std_logic_vector(7 downto 0);
+        lcd_char_we   : out std_logic;
+        lcd_cmd_out   : out std_logic_vector(7 downto 0);
+        lcd_cmd_we    : out std_logic;
+        lcd_busy      : in  std_logic
+    );
     end component;
 
     signal clk          : std_logic := '0';
     signal reset        : std_logic := '1';
-    signal cpu_addr     : std_logic_vector(7 downto 0) := (others => '0');
-    signal cpu_data_in  : std_logic_vector(7 downto 0) := (others => '0');
+    signal cpu_addr     : std_logic_vector(15 downto 0) := (others => '0');
+    signal cpu_data_in  : std_logic_vector(15 downto 0) := (others => '0');
     signal cpu_mem_write: std_logic := '0';
-    signal cpu_data_out : std_logic_vector(7 downto 0);
-    signal ram_data_out : std_logic_vector(7 downto 0) := (others => '0');
+    signal cpu_data_out : std_logic_vector(15 downto 0);
+    signal ram_data_out : std_logic_vector(15 downto 0) := (others => '0');
     signal ram_we       : std_logic;
-    signal switches_in  : std_logic_vector(7 downto 0) := (others => '0');
-    signal buttons_in   : std_logic_vector(7 downto 0) := (others => '0');
-    signal leds_out     : std_logic_vector(7 downto 0);
-    signal display_out  : std_logic_vector(7 downto 0);
+    signal switches_in  : std_logic_vector(15 downto 0) := (others => '0');
+    signal buttons_in   : std_logic_vector(15 downto 0) := (others => '0');
+    signal leds_out     : std_logic_vector(15 downto 0);
+    signal display_out  : std_logic_vector(15 downto 0);
+    signal keypad_data_in: std_logic_vector(15 downto 0);
+    signal lcd_char_out  : std_logic_vector(7 downto 0);
+    signal lcd_char_we   :  std_logic;
+    signal lcd_cmd_out   :  std_logic_vector(7 downto 0);
+    signal lcd_cmd_we    :  std_logic;
+    signal lcd_busy      :   std_logic;
 
     constant clk_period : time := 10 ns;
 
@@ -74,7 +87,15 @@ begin
         switches_in => switches_in,
         buttons_in => buttons_in,
         leds_out => leds_out,
-        display_out => display_out
+        display_out => display_out,
+        
+        keypad_data_in => keypad_data_in,
+        lcd_char_out   => lcd_char_out,
+        lcd_char_we   => lcd_char_we,
+        lcd_cmd_out   => lcd_cmd_out,
+        lcd_cmd_we    => lcd_cmd_we,
+        lcd_busy    =>lcd_busy
+        
     );
 
     clk_process :process
