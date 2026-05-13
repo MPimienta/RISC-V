@@ -102,9 +102,11 @@ begin
                 
             when "0111" => -- JAL
                 jump_jal <= '1';
+                reg_write <= '1';
                 
             when "1000" => -- JALR
                 jump_jalr <= '1';
+                reg_write <= '1';
                 
             when others =>
                 null;

@@ -264,6 +264,8 @@ signal forward_a, forward_b : std_logic_vector(1 downto 0);
 signal alu_mux_a_out, alu_mux_b_out, alu_operando_b, ex_alu_result : std_logic_vector(15 downto 0);
 signal ex_zero_flag, ex_branch_taken : std_logic;
 signal ex_branch_target : std_logic_vector(15 downto 0);
+signal alu_result_internal : std_logic_vector(15 downto 0);
+signal branch_base_addr    : std_logic_vector(15 downto 0);
 
 -- Etapa MEMORY
 signal ex_mem_alu_res, ex_mem_rs2_data : std_logic_vector(15 downto 0);
@@ -407,11 +409,15 @@ alu_operando_b <= id_ex_imm when id_ex_alu_src_b = '1' else alu_mux_b_out;
 
 inst_ALU: ALU port map (
     A => alu_mux_a_out, B => alu_operando_b, ALU_Sel => id_ex_alu_sel, 
-    Result => ex_alu_result, Zero => ex_zero_flag
+    Result => alu_result_internal, Zero => ex_zero_flag
 );
 
+ex_alu_result <= std_logic_vector(unsigned(id_ex_pc) + 1) when (id_ex_j_jal = '1' or id_ex_j_jalr = '1') else alu_result_internal;
+
+branch_base_addr <= alu_mux_a_out when id_ex_j_jalr = '1' else id_ex_pc;
+
 inst_BranchAdd: branch_adder port map (
-    pc_in => id_ex_pc, imm_in => id_ex_imm, target_out => ex_branch_target
+    pc_in => branch_base_addr, imm_in => id_ex_imm, target_out => ex_branch_target
 );
 
 ex_branch_taken <= '1' when (id_ex_j_jal = '1' or id_ex_j_jalr = '1' or 

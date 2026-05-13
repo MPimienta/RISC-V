@@ -135,7 +135,7 @@ begin
         
         -- Esperar lo suficiente para que la CPU divida el resultado entre 10 
         -- y envíe el dígito '5' al controlador I2C de la pantalla.
-        wait for 1000 us;
+        wait for 1 ms;
         
         -- Fin de simulación
         assert false report "Simulación Terminada Exitosamente" severity failure;
