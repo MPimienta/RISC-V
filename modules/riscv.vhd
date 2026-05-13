@@ -258,6 +258,8 @@ signal keypad_data : std_logic_vector(15 downto 0);
 -- Señales internas
 signal clk_deb : std_logic;
 signal display_val : std_logic_vector(15 downto 0);
+signal clk_10mhz : std_logic := '0';
+signal clk_div_counter : integer range 0 to 4 := 0;
 
 -- Etapa FETCH
 signal if_pc_current, if_pc_next, if_instruction : std_logic_vector(15 downto 0);
@@ -302,6 +304,20 @@ signal hz_pc_en, hz_if_id_en, hz_if_id_flush, hz_id_ex_flush : std_logic;
 
 begin
 
+process(clk)
+    begin
+        if rising_edge(clk) then
+            if clk_div_counter = 4 then
+                clk_10mhz <= not clk_10mhz;
+                clk_div_counter <= 0;
+            else
+                clk_div_counter <= clk_div_counter + 1;
+            end if;
+        end if;
+    end process;
+    
+clk_deb <= clk_10mhz;
+
 inst_Keypad: entity work.keypad_controller
 port map (
     clk => clk,
@@ -313,7 +329,7 @@ port map (
 
 -- 0. Reloj y Visualización
 --deb_clk: debouncer port map (clk => clk, reset => btn_reset, btn_in => btn_clk, btn_out => clk_deb);
-clk_deb <= clk;
+--clk_deb <= clk;
 
 inst_7Seg: seven_seg_decoder port map (
     clk => clk, reset => btn_reset, data_in => display_val,
