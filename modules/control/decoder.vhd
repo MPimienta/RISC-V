@@ -29,7 +29,7 @@ architecture Behavioral of decoder is
         
 begin
 
-    ram_we <= '1' when (cpu_mem_write = '1' and unsigned(cpu_addr) < 128) else '0';
+    ram_we <= '1' when (cpu_mem_write = '1' and unsigned(cpu_addr) < 1023) else '0';
 
     process(clk, reset)
     begin
@@ -39,9 +39,9 @@ begin
             
         elsif rising_edge(clk) then
             if cpu_mem_write = '1' then
-                if cpu_addr = x"00F0" then
+                if cpu_addr = x"FFF0" then
                     leds <= cpu_data_in;
-                elsif cpu_addr = x"00F1" then
+                elsif cpu_addr = x"FFF1" then
                     display <= cpu_data_in; --eliminar luego
                 end if;
             end if;
@@ -53,19 +53,19 @@ begin
     
     process(cpu_addr, ram_data_out, switches_in, buttons_in, keypad_data_in)
     begin
-        if unsigned(cpu_addr) < 128 then
+        if unsigned(cpu_addr) < 1024 then
             cpu_data_out <= ram_data_out; 
             
-        elsif cpu_addr = x"00E0" then
+        elsif cpu_addr = x"FFE0" then
             cpu_data_out <= switches_in; 
             
-        elsif cpu_addr = x"00E1" then
+        elsif cpu_addr = x"FFE1" then
             cpu_data_out <= "00000000000" & buttons_in; --eliminar luego
             
-        elsif cpu_addr = x"00E2" then
+        elsif cpu_addr = x"FFE2" then
             cpu_data_out <= keypad_data_in; 
             
-        elsif cpu_addr = x"00F4" then          -- SPI
+        elsif cpu_addr = x"FFF4" then          -- SPI
             cpu_data_out <= oled_data_out;            
             
         else

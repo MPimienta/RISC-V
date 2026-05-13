@@ -57,7 +57,7 @@ begin
     process(cpu_addr, status_busy)
     begin
         cpu_data_out <= (others => '0');
-        if cpu_addr = x"00F4" then
+        if cpu_addr = x"FFF4" then
             cpu_data_out(0) <= status_busy;
         end if;
     end process;
@@ -75,9 +75,9 @@ begin
             else
                 -- 1. Escritura desde la CPU
                 if cpu_we = '1' then
-                    if cpu_addr = x"00F2" then
+                    if cpu_addr = x"FFF2" then
                         ctrl_reg <= cpu_data_in(4 downto 0);
-                    elsif cpu_addr = x"00F3" and status_busy = '0' then
+                    elsif cpu_addr = x"FFF3" and status_busy = '0' then
                         shift_reg <= cpu_data_in(7 downto 0);
                         status_busy <= '1';
                         bit_counter <= 7;

@@ -312,7 +312,8 @@ port map (
 );
 
 -- 0. Reloj y Visualización
-deb_clk: debouncer port map (clk => clk, reset => btn_reset, btn_in => btn_clk, btn_out => clk_deb);
+--deb_clk: debouncer port map (clk => clk, reset => btn_reset, btn_in => btn_clk, btn_out => clk_deb);
+clk_deb <= clk;
 
 inst_7Seg: seven_seg_decoder port map (
     clk => clk, reset => btn_reset, data_in => display_val,

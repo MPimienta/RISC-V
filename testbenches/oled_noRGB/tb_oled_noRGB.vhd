@@ -87,7 +87,7 @@ begin
         -- Queremos: CS=0 (activo), Reset=1 (inactivo), VDD=1, VBAT=1, D/C=0 (Comando)
         -- Bit 4: Vbat(1), Bit 3: Vdd(1), Bit 2: CS(0), Bit 1: Res(1), Bit 0: D/C(0) -> 11010 en binario = 0x001A
         wait until rising_edge(clk);
-        cpu_addr <= x"00F2";
+        cpu_addr <= x"FFF2";
         cpu_data_in <= x"001A";
         cpu_we <= '1';
         
@@ -98,7 +98,7 @@ begin
         -- 3. Simular CPU: Enviar un byte por SPI (Registro de Datos 0x00F3)
         -- Vamos a enviar el comando 0xAF (Display ON)
         wait until rising_edge(clk);
-        cpu_addr <= x"00F3";
+        cpu_addr <= x"FFF3";
         cpu_data_in <= x"00AF"; -- 1010 1111
         cpu_we <= '1';
         
@@ -107,7 +107,7 @@ begin
         
         -- 4. Simular CPU: Leer el estado (Polling) hasta que termine
         -- La CPU se quedaría leyendo la dirección 0x00F4 esperando un 0 en el Bit 0
-        cpu_addr <= x"00F4";
+        cpu_addr <= x"FFF4";
         loop
             wait until rising_edge(clk);
             exit when cpu_data_out(0) = '0'; -- Salir del bucle si busy = 0
@@ -117,7 +117,7 @@ begin
 
         -- 5. Simular CPU: Enviar un segundo byte (Ej. 0x55 -> 0101 0101)
         wait until rising_edge(clk);
-        cpu_addr <= x"00F3";
+        cpu_addr <= x"FFF3";
         cpu_data_in <= x"0055"; 
         cpu_we <= '1';
         
