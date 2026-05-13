@@ -16,8 +16,16 @@ Port (
     keypad_col : in std_logic_vector(3 downto 0);
     keypad_row : out std_logic_vector(3 downto 0);
     -- lcd
-    lcd_sda : inout std_logic;
-    lcd_scl : inout std_logic
+    --lcd_sda : inout std_logic;
+    --lcd_scl : inout std_logic
+    -- Pines de la PmodOLED
+    oled_cs       : out std_logic;
+    oled_sdin     : out std_logic;
+    oled_sclk     : out std_logic;
+    oled_dc       : out std_logic;
+    oled_res      : out std_logic;
+    oled_vbat     : out std_logic;
+    oled_vdd      : out std_logic
 );
 end riscv;
 
@@ -96,12 +104,7 @@ component decoder is
         keypad_data_in: in std_logic_vector(15 downto 0);
         leds_out      : out std_logic_vector(15 downto 0);
         display_out   : out std_logic_vector(15 downto 0);
-        -- lcd
-        lcd_char_out  : out std_logic_vector(7 downto 0);
-        lcd_char_we   : out std_logic;
-        lcd_cmd_out   : out std_logic_vector(7 downto 0);
-        lcd_cmd_we    : out std_logic;
-        lcd_busy      : in  std_logic
+        oled_data_out : in std_logic_vector(15 downto 0)
     );
 end component;
 
@@ -237,6 +240,19 @@ component  keypad_controller is
     );
 end component ;
 
+component oled_spi_mmio is
+    Port ( 
+        clk, reset    : in std_logic;
+        cpu_addr      : in std_logic_vector(15 downto 0);
+        cpu_data_in   : in std_logic_vector(15 downto 0);
+        cpu_we        : in std_logic;
+        cpu_data_out  : out std_logic_vector(15 downto 0);
+        oled_cs, oled_sdin, oled_sclk, oled_dc, oled_res, oled_vbat, oled_vdd : out std_logic
+    );
+end component;
+
+signal oled_bus_out : std_logic_vector(15 downto 0);
+
 signal keypad_data : std_logic_vector(15 downto 0);
 
 -- Señales internas
@@ -282,17 +298,6 @@ signal wb_write_data : std_logic_vector(15 downto 0);
 
 -- Hazards
 signal hz_pc_en, hz_if_id_en, hz_if_id_flush, hz_id_ex_flush : std_logic;
-
--- LCD
-signal w_lcd_char_out : std_logic_vector(7 downto 0);
-signal w_lcd_char_we  : std_logic;
-signal w_lcd_cmd_out  : std_logic_vector(7 downto 0);
-signal w_lcd_cmd_we   : std_logic;
-signal w_lcd_busy     : std_logic;
-
-signal w_i2c_ena      : std_logic;
-signal w_i2c_data     : std_logic_vector(7 downto 0);
-signal w_i2c_busy     : std_logic;
 
 
 begin
@@ -441,12 +446,24 @@ inst_Decoder: decoder port map (
     cpu_data_out => mem_dec_data_out, ram_data_out => mem_ram_data_out, ram_we => dec_ram_we,
     switches_in => swt, buttons_in => "00000", 
     keypad_data_in => keypad_data,
-    leds_out => led, display_out => open,
-    lcd_char_out => w_lcd_char_out,
-    lcd_char_we  => w_lcd_char_we,
-    lcd_cmd_out  => w_lcd_cmd_out,
-    lcd_cmd_we   => w_lcd_cmd_we,
-    lcd_busy     => w_lcd_busy
+    oled_data_out => oled_bus_out,
+    leds_out => led, display_out => open
+);
+
+inst_OLED: oled_spi_mmio port map (
+    clk => clk_deb, -- Asegúrate de usar el mismo reloj con el que escribes (pipeline clk)
+    reset => btn_reset,
+    cpu_addr => ex_mem_alu_res,
+    cpu_data_in => ex_mem_rs2_data,
+    cpu_we => ex_mem_mem_write,
+    cpu_data_out => oled_bus_out,
+    oled_cs => oled_cs,
+    oled_sdin => oled_sdin,
+    oled_sclk => oled_sclk,
+    oled_dc => oled_dc,
+    oled_res => oled_res,
+    oled_vbat => oled_vbat,
+    oled_vdd => oled_vdd
 );
 
 inst_RAM: ram_data port map (
@@ -454,32 +471,32 @@ inst_RAM: ram_data port map (
     data_in => ex_mem_rs2_data, data_out => mem_ram_data_out
 );
 
-inst_LCD: entity work.lcd_controller
-    port map (
-        clk        => clk,
-        reset      => btn_reset,
-        char_in    => w_lcd_char_out,
-        char_we    => w_lcd_char_we,
-        cmd_in     => w_lcd_cmd_out,
-        cmd_we     => w_lcd_cmd_we,
-        busy       => w_lcd_busy,
-        i2c_ena    => w_i2c_ena,
-        i2c_data   => w_i2c_data,
-        i2c_busy   => w_i2c_busy
-    );
+--inst_LCD: entity work.lcd_controller
+--    port map (
+ --       clk        => clk,
+ ---       reset      => btn_reset,
+ --       char_in    => w_lcd_char_out,
+ --       char_we    => w_lcd_char_we,
+ --       cmd_in     => w_lcd_cmd_out,
+ --       cmd_we     => w_lcd_cmd_we,
+ --       busy       => w_lcd_busy,
+  --      i2c_ena    => w_i2c_ena,
+  --      i2c_data   => w_i2c_data,
+ --       i2c_busy   => w_i2c_busy
+ --   );
 
-inst_I2C: entity work.i2c_master
-    port map (
-        clk        => clk,
-        reset      => btn_reset,
-        ena        => w_i2c_ena,
-        addr       => "0100111", -- Dirección típica PCF8574 (ajusta si tu placa usa 0x3F u otra)
-        rw         => '0',
-        data_wr    => w_i2c_data,
-        busy       => w_i2c_busy,
-        sda        => lcd_sda,
-        scl        => lcd_scl
-    );
+--inst_I2C: entity work.i2c_master
+--    port map (
+ --       clk        => clk,
+ --       reset      => btn_reset,
+ --       ena        => w_i2c_ena,
+ --       addr       => "0100111", -- Dirección típica PCF8574 (ajusta si tu placa usa 0x3F u otra)
+ --       rw         => '0',
+ --       data_wr    => w_i2c_data,
+ --       busy       => w_i2c_busy,
+ --       sda        => lcd_sda,
+  --      scl        => lcd_scl
+  --  );
 
 mem_cpu_data_in <= mem_dec_data_out;
 

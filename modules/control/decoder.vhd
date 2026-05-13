@@ -17,12 +17,8 @@ entity decoder is
         keypad_data_in: in std_logic_vector(15 downto 0);
         leds_out      : out std_logic_vector(15 downto 0);
         display_out   : out std_logic_vector(15 downto 0);
-        -- lcd
-        lcd_char_out  : out std_logic_vector(7 downto 0);
-        lcd_char_we   : out std_logic;
-        lcd_cmd_out   : out std_logic_vector(7 downto 0);
-        lcd_cmd_we    : out std_logic;
-        lcd_busy      : in  std_logic
+        oled_data_out : in std_logic_vector(15 downto 0)
+
     );
 end decoder;
 
@@ -40,27 +36,13 @@ begin
         if reset = '1' then
             leds <= (others => '0');
             display <= (others => '0');
-            lcd_char_out <= (others => '0');
-            lcd_cmd_out <= (others => '0');
-            lcd_char_we <= '0';
-            lcd_cmd_we <= '0';
             
         elsif rising_edge(clk) then
-            -- Por defecto, los pulsos de escritura están a 0
-            lcd_char_we <= '0';
-            lcd_cmd_we <= '0';
-            
             if cpu_mem_write = '1' then
                 if cpu_addr = x"00F0" then
                     leds <= cpu_data_in;
                 elsif cpu_addr = x"00F1" then
                     display <= cpu_data_in; --eliminar luego
-                elsif cpu_addr = x"00F2" then
-                    lcd_char_out <= cpu_data_in(7 downto 0); -- lcd char
-                    lcd_char_we  <= '1';
-                elsif cpu_addr = x"00F3" then
-                    lcd_cmd_out  <= cpu_data_in(7 downto 0); -- lcd cmd
-                    lcd_cmd_we   <= '1';
                 end if;
             end if;
         end if;
@@ -83,8 +65,8 @@ begin
         elsif cpu_addr = x"00E2" then
             cpu_data_out <= keypad_data_in; 
             
-        elsif cpu_addr = x"00F4" then
-            cpu_data_out <= "000000000000000" & lcd_busy; -- lcd busy
+        elsif cpu_addr = x"00F4" then          -- SPI
+            cpu_data_out <= oled_data_out;            
             
         else
             cpu_data_out <= (others => '0');
