@@ -1,0 +1,229 @@
+-- INICIALIZACIÓN
+        0   => x"4278", -- LI r1, 120
+        1   => x"4801", -- LI r4, 1
+        2   => x"7476", -- JAL r2, LCD_CMD    (Target: 120)
+        3   => x"4600", -- LI r3, 0
+        4   => x"4A00", -- LI r5, 0
+
+        -- INPUT_LOOP
+        5   => x"7491", -- JAL r2, READ_KEYPAD (Target 150)
+        6   => x"4C0A", -- LI r6, 10
+        7   => x"5990", -- BEQ r4, r6, OP_ADD 
+        8   => x"4C0B", -- LI r6, 11
+        9   => x"5998", -- BEQ r4, r6, OP_SUB 
+        10  => x"4C0F", -- LI r6, 15
+        11  => x"59A0", -- BEQ r4, r6, OP_EQ  
+
+        12  => x"4C03", -- LI r6, 3
+        13  => x"0CF4", -- SLL r6, r3, r6
+        14  => x"4E01", -- LI r7, 1
+        15  => x"0EFC", -- SLL r7, r3, r7
+        16  => x"07B8", -- ADD r3, r6, r7
+        17  => x"06E0", -- ADD r3, r3, r4
+
+        18  => x"4C30", -- LI r6, 48
+        19  => x"0930", -- ADD r4, r4, r6
+        20  => x"7473", -- JAL r2, LCD_CHAR (Target 135)
+        21  => x"71F0", -- JAL r0, INPUT_LOOP 
+        22  => x"0000", -- NOP
+
+        -- OP_ADD
+        23  => x"2640", -- SW r3, r1, 0
+        24  => x"4C01", -- LI r6, 1
+        25  => x"0271", -- SUB r1, r1, r6
+        26  => x"4600", -- LI r3, 0
+        27  => x"4A01", -- LI r5, 1
+        28  => x"482B", -- LI r4, 43
+        29  => x"746A", -- JAL r2, LCD_CHAR 
+        30  => x"71E7", -- JAL r0, INPUT_LOOP 
+        31  => x"0000", -- NOP
+        32  => x"0000", -- NOP
+
+        -- OP_SUB
+        33  => x"2640", -- SW r3, r1, 0
+        34  => x"4C01", -- LI r6, 1
+        35  => x"0271", -- SUB r1, r1, r6
+        36  => x"4600", -- LI r3, 0
+        37  => x"4A02", -- LI r5, 2
+        38  => x"482D", -- LI r4, 45
+        39  => x"7460", -- JAL r2, LCD_CHAR 
+        40  => x"71DD", -- JAL r0, INPUT_LOOP 
+        41  => x"0000", -- NOP
+        42  => x"0000", -- NOP
+
+        -- OP_EQ
+        43  => x"4E01", -- LI r7, 1
+        44  => x"0278", -- ADD r1, r1, r7
+        45  => x"1C40", -- LW r6, r1, 0
+        46  => x"0000", -- NOP (EVITA RIESGO DEL PIPELINE)
+        47  => x"0000", -- NOP
+        48  => x"0000", -- NOP
+        49  => x"4E01", -- LI r7, 1
+        50  => x"5BC4", -- BEQ r5, r7, DO_ADD 
+        51  => x"4E02", -- LI r7, 2
+        52  => x"5BC4", -- BEQ r5, r7, DO_SUB 
+        53  => x"71D0", -- JAL r0, INPUT_LOOP 
+
+        -- DO_ADD
+        54  => x"0798", -- ADD r3, r6, r3
+        55  => x"700D", -- JAL r0, SHOW_RES 
+
+        -- DO_SUB
+        56  => x"0F9D", -- SLT r7, r6, r3
+        57  => x"5E09", -- BEQ r7, r0, NO_NEG 
+        58  => x"06F1", -- SUB r3, r3, r6
+        59  => x"2640", -- SW r3, r1, 0
+        60  => x"48C0", -- LI r4, 192
+        61  => x"743B", -- JAL r2, LCD_CMD 
+        62  => x"482D", -- LI r4, 45
+        63  => x"7448", -- JAL r2, LCD_CHAR 
+        64  => x"1640", -- LW r3, r1, 0
+        65  => x"700A", -- JAL r0, FMT_RES 
+
+        -- NO_NEG
+        66  => x"0799", -- SUB r3, r6, r3
+        67  => x"0000", -- NOP
+
+        -- SHOW_RES
+        68  => x"2640", -- SW r3, r1, 0
+        69  => x"48C0", -- LI r4, 192
+        70  => x"7432", -- JAL r2, LCD_CMD 
+        71  => x"1640", -- LW r3, r1, 0
+        72  => x"0000", -- NOP (EVITA RIESGO DEL PIPELINE)
+        73  => x"0000", -- NOP
+        74  => x"0000", -- NOP
+
+        -- FMT_RES
+        75  => x"7403", -- JAL r2, PRT_DEC 
+        76  => x"7000", -- BUCLE INFINITO (FIN)
+        77  => x"0000", -- NOP
+
+        -- PRT_DEC
+        78  => x"2440", -- SW r2, r1, 0
+        79  => x"4C01", -- LI r6, 1
+        80  => x"0271", -- SUB r1, r1, r6
+        81  => x"4CFF", -- LI r6, 255
+        82  => x"2C40", -- SW r6, r1, 0
+        83  => x"4C01", -- LI r6, 1
+        84  => x"0271", -- SUB r1, r1, r6
+
+        85  => x"4800", -- LI r4, 0
+        86  => x"4A0A", -- LI r5, 10
+        -- div_loop:
+        87  => x"0CED", -- SLT r6, r3, r5
+        88  => x"6C05", -- BNE r6, r0, div_end 
+        89  => x"06E9", -- SUB r3, r3, r5
+        90  => x"4C01", -- LI r6, 1
+        91  => x"0930", -- ADD r4, r4, r6
+        92  => x"71FB", -- JAL r0, div_loop 
+
+        -- div_end:
+        93  => x"2640", -- SW r3, r1, 0
+        94  => x"4C01", -- LI r6, 1
+        95  => x"0271", -- SUB r1, r1, r6
+        96  => x"0700", -- ADD r3, r4, r0
+        97  => x"6634", -- BNE r3, r0, extract_loop 
+
+        -- prt_loop:
+        98  => x"4C01", -- LI r6, 1
+        99  => x"0270", -- ADD r1, r1, r6
+        100 => x"1840", -- LW r4, r1, 0
+        101 => x"0000", -- NOP (EVITA RIESGO DEL PIPELINE)
+        102 => x"0000", -- NOP
+        103 => x"0000", -- NOP
+        104 => x"4CFF", -- LI r6, 255
+        105 => x"5986", -- BEQ r4, r6, prt_end 
+        106 => x"4C30", -- LI r6, 48
+        107 => x"0930", -- ADD r4, r4, r6
+        108 => x"741B", -- JAL r2, LCD_CHAR 
+        109 => x"71F5", -- JAL r0, prt_loop 
+        110 => x"0000", -- NOP
+
+        -- prt_end:
+        111 => x"4C01", -- LI r6, 1
+        112 => x"0270", -- ADD r1, r1, r6
+        113 => x"1440", -- LW r2, r1, 0
+        114 => x"0000", -- NOP (EVITA RIESGO DEL PIPELINE)
+        115 => x"0000", -- NOP
+        116 => x"0000", -- NOP
+        117 => x"8080", -- JALR r0, r2, 0
+        118 => x"0000", -- NOP
+        119 => x"0000", -- NOP
+
+        -- LCD_CMD:
+        120 => x"2440", -- SW r2, r1, 0
+        121 => x"4C01", -- LI r6, 1
+        122 => x"0271", -- SUB r1, r1, r6
+        123 => x"742F", -- JAL r2, WAIT_LCD 
+        124 => x"4EF3", -- LI r7, 243
+        125 => x"29C0", -- SW r4, r7, 0
+        126 => x"4C01", -- LI r6, 1
+        127 => x"0270", -- ADD r1, r1, r6
+        128 => x"1440", -- LW r2, r1, 0
+        129 => x"0000", -- NOP (EVITA RIESGO DEL PIPELINE)
+        130 => x"0000", -- NOP
+        131 => x"0000", -- NOP
+        132 => x"8080", -- JALR r0, r2, 0
+        133 => x"0000", -- NOP
+        134 => x"0000", -- NOP
+
+        -- LCD_CHAR:
+        135 => x"2440", -- SW r2, r1, 0
+        136 => x"4C01", -- LI r6, 1
+        137 => x"0271", -- SUB r1, r1, r6
+        138 => x"7420", -- JAL r2, WAIT_LCD 
+        139 => x"4EF2", -- LI r7, 242
+        140 => x"29C0", -- SW r4, r7, 0
+        141 => x"4C01", -- LI r6, 1
+        142 => x"0270", -- ADD r1, r1, r6
+        143 => x"1440", -- LW r2, r1, 0
+        144 => x"0000", -- NOP (EVITA RIESGO DEL PIPELINE)
+        145 => x"0000", -- NOP
+        146 => x"0000", -- NOP
+        147 => x"8080", -- JALR r0, r2, 0
+        148 => x"0000", -- NOP
+        149 => x"0000", -- NOP
+
+        -- READ_KEYPAD:
+        150 => x"4EE2", -- LI r7, 226
+        -- r_press:
+        151 => x"1DC0", -- LW r6, r7, 0
+        152 => x"0000", -- NOP (EVITA RIESGO DEL PIPELINE)
+        153 => x"0000", -- NOP
+        154 => x"0000", -- NOP
+        155 => x"4A10", -- LI r5, 16
+        156 => x"09AA", -- AND r4, r6, r5
+        157 => x"583A", -- BEQ r4, r0, r_press 
+        158 => x"4A0F", -- LI r5, 15
+        159 => x"09AA", -- AND r4, r6, r5
+        -- r_rel:
+        160 => x"1DC0", -- LW r6, r7, 0
+        161 => x"0000", -- NOP (EVITA RIESGO DEL PIPELINE)
+        162 => x"0000", -- NOP
+        163 => x"0000", -- NOP
+        164 => x"4A10", -- LI r5, 16
+        165 => x"0DAA", -- AND r6, r6, r5
+        166 => x"6C3A", -- BNE r6, r0, r_rel 
+        167 => x"8080", -- JALR r0, r2, 0
+        168 => x"0000", -- NOP
+        169 => x"0000", -- NOP
+
+        -- WAIT_LCD:
+        170 => x"4EF4", -- LI r7, 244           (Dirección LCD Busy)
+        171 => x"0000", -- NOP
+        
+        -- Etiqueta w_loop (Dirección 172 / 0xAC)
+        172 => x"1DC0", -- LW r6, r7, 0         (Leer registro Busy)
+        173 => x"0000", -- NOP                  (Burbuja 1)
+        174 => x"0000", -- NOP                  (Burbuja 2)
+        175 => x"0000", -- NOP                  (Burbuja 3)
+        176 => x"4A01", -- LI r5, 1             (Cargar máscara)
+        177 => x"0000", -- NOP                  (Burbuja 4)
+        178 => x"0DAA", -- AND r6, r6, r5       (Aislar bit 0)
+        179 => x"0000", -- NOP                  (Burbuja 5)
+        180 => x"0000", -- NOP                  (Burbuja 6)
+        181 => x"6C36", -- BNE r6, r0, -10      (Salto a 172 si sigue ocupado) !!SALTOS RECALCULADOS!!
+        
+        182 => x"0000", -- NOP
+        183 => x"0000", -- NOP
+        184 => x"8080", -- JALR r0, r2, 0       (Retorno de subrutina)
