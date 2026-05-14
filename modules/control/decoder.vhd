@@ -42,7 +42,7 @@ begin
                 if cpu_addr = x"FFF0" then
                     leds <= cpu_data_in;
                 elsif cpu_addr = x"FFF1" then
-                    display <= cpu_data_in; --eliminar luego
+                    display <= cpu_data_in;
                 end if;
             end if;
         end if;
