@@ -12,6 +12,8 @@ Port (
     seg         : out std_logic_vector (6 downto 0);
     dp          : out std_logic;
     an          : out std_logic_vector (3 downto 0);
+    btn_add     : in std_logic ;
+    btn_sub     : in std_logic ;
     --keypad
     keypad_col : in std_logic_vector(3 downto 0);
     keypad_row : out std_logic_vector(3 downto 0);
@@ -301,6 +303,9 @@ signal wb_write_data : std_logic_vector(15 downto 0);
 -- Hazards
 signal hz_pc_en, hz_if_id_en, hz_if_id_flush, hz_id_ex_flush : std_logic;
 
+signal btn_array : std_logic_vector (4 downto 0);
+
+signal mmio_display_data : std_logic_vector (15 downto 0);
 
 begin
 
@@ -331,11 +336,7 @@ port map (
 --deb_clk: debouncer port map (clk => clk, reset => btn_reset, btn_in => btn_clk, btn_out => clk_deb);
 --clk_deb <= clk;
 
-inst_7Seg: seven_seg_decoder port map (
-    clk => clk, reset => btn_reset, data_in => display_val,
-    seg => seg, dp => dp, an => an
-);
-display_val <= if_pc_current; -- Mostramos el PC para debug
+
 
 -- 1. FETCH (IF)
 if_pc_next <= ex_branch_target when ex_branch_taken = '1' else std_logic_vector(unsigned(if_pc_current) + 1);
@@ -456,16 +457,24 @@ reg_ex_mem: ex_mem_register port map (
     ctrl_reg_write_out => ex_mem_reg_write, ctrl_mem_to_reg_out => ex_mem_mem_to_reg
 );
 
+btn_array <= ("000" & btn_sub & btn_add);
+
 -- 4. MEMORY (MEM)
 inst_Decoder: decoder port map (
     clk => clk_deb, reset => btn_reset,
     cpu_addr => ex_mem_alu_res, cpu_data_in => ex_mem_rs2_data, cpu_mem_write => ex_mem_mem_write,
     cpu_data_out => mem_dec_data_out, ram_data_out => mem_ram_data_out, ram_we => dec_ram_we,
-    switches_in => swt, buttons_in => "00000", 
+    switches_in => swt, buttons_in => btn_array, 
     keypad_data_in => keypad_data,
     oled_data_out => oled_bus_out,
-    leds_out => led, display_out => open
+    leds_out => led, display_out => mmio_display_data
 );
+
+inst_7Seg: seven_seg_decoder port map (
+    clk => clk, reset => btn_reset, data_in => mmio_display_data,
+    seg => seg, dp => dp, an => an
+);
+--display_val <= if_reg_pc; -- Mostramos el PC para debug
 
 inst_OLED: oled_spi_mmio port map (
     clk => clk_deb, -- Asegúrate de usar el mismo reloj con el que escribes (pipeline clk)
