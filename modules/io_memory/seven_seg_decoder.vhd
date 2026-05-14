@@ -47,9 +47,16 @@ architecture Behavioral of seven_seg_decoder is
     -- Señales para el divisor de reloj (para el refresco de los displays)
     signal refresh_counter : unsigned(19 downto 0) := (others => '0');
     signal led_activating_counter : std_logic_vector(1 downto 0);
+    
+    signal op1 : unsigned(3 downto 0);
+    signal op2 : unsigned(3 downto 0);
+    signal res_signed : signed (7 downto 0);
 
-    -- Señales para decodificar el dígito actual
-    signal current_digit : std_logic_vector(3 downto 0);
+    -- Señales para conversión binario -> decimal
+    signal res_abs : integer range 0 to 127;
+    signal tens : integer range 0 to 9;
+    signal units_d : integer range 0 to 9;
+    signal is_neg : std_logic;
 
 begin
 
@@ -65,57 +72,67 @@ begin
     end process;
 
     -- Usamos los bits superiores del contador para cambiar de display
-    --led_activating_counter <= std_logic_vector(refresh_counter(19 downto 18));
+    led_activating_counter <= std_logic_vector(refresh_counter(19 downto 18));
     
-    -- comentar para implementación
-    led_activating_counter <= std_logic_vector(refresh_counter(3 downto 2));
+     --comentar para implementación
+    --led_activating_counter <= std_logic_vector(refresh_counter(3 downto 2));
+    
+    op1 <= unsigned(data_in(15 downto 12));
+    op2 <= unsigned(data_in(11 downto 8));
+    res_signed <= signed(data_in(7 downto 0));
+    
+    res_abs <= to_integer(abs(res_signed));
+    is_neg <= '1' when res_signed < 0 else '0';
+    
+    tens <= res_abs / 10;
+    units_d <= res_abs mod 10;
 
     -- Multiplexor para activar los ánodos (encendemos un display a la vez)
-process(led_activating_counter, data_in) -- <-- Añade data_in a la lista sensible
+process(led_activating_counter, op1, op2, tens, units_d, is_neg)
+    variable digit_val : integer range 0 to 15;
     begin
+        seg <= "1111111";
+        digit_val := 15;
+        
         case led_activating_counter is
             when "00" =>
-                an <= "0111"; 
-                current_digit <= data_in(15 downto 12);
+                an <= "0111";
+                digit_val := to_integer(op1);
             when "01" =>
-                an <= "1011"; 
-                current_digit <= data_in(11 downto 8);
+                an <= "1011";
+                digit_val := to_integer(op2);
             when "10" =>
-                an <= "1101"; 
-                current_digit <= data_in(7 downto 4);
+                an <= "1101";
+                if is_neg = '1' then
+                    seg <= "0111111";
+                    digit_val := 15;
+                elsif tens > 0 then
+                    digit_val := tens;
+                else 
+                    seg <= "1111111";
+                    digit_val := 15;
+                end if;
             when "11" =>
-                an <= "1110"; 
-                current_digit <= data_in(3 downto 0);
-            when others =>
-                an <= "1111";
-                current_digit <= "0000"; -- <-- ESTO por seguridad
+                an <= "1110";
+                digit_val := units_d;
+            when others => an <= "1111";
         end case;
+        
+        if digit_val = 0 then seg <= "1000000";
+        elsif digit_val = 1 then seg <= "1111001";
+        elsif digit_val = 2 then seg <= "0100100";
+        elsif digit_val = 3 then seg <= "0110000";
+        elsif digit_val = 4 then seg <= "0011001";
+        elsif digit_val = 5 then seg <= "0010010";
+        elsif digit_val = 6 then seg <= "0000010";
+        elsif digit_val = 7 then seg <= "1111000";
+        elsif digit_val = 8 then seg <= "0000000";
+        elsif digit_val = 9 then seg <= "0010000";
+        end if;
+        
     end process;
 
-    -- Decodificador BCD a 7 Segmentos (Ánodo Común: 0 = Encendido, 1 = Apagado)
-    process(current_digit)
-    begin
-        case current_digit is
-            when "0000" => seg <= "1000000"; -- 0
-            when "0001" => seg <= "1111001"; -- 1
-            when "0010" => seg <= "0100100"; -- 2
-            when "0011" => seg <= "0110000"; -- 3
-            when "0100" => seg <= "0011001"; -- 4
-            when "0101" => seg <= "0010010"; -- 5
-            when "0110" => seg <= "0000010"; -- 6
-            when "0111" => seg <= "1111000"; -- 7
-            when "1000" => seg <= "0000000"; -- 8
-            when "1001" => seg <= "0010000"; -- 9
-            when "1010" => seg <= "0001000"; -- A
-            when "1011" => seg <= "0000011"; -- b
-            when "1100" => seg <= "1000110"; -- C
-            when "1101" => seg <= "0100001"; -- d
-            when "1110" => seg <= "0000110"; -- E
-            when "1111" => seg <= "0001110"; -- F
-            when others => seg <= "1111111"; -- Apagado
-        end case;
-    end process;
-
+   
     -- Apagamos el punto decimal
     dp <= '1';
 
