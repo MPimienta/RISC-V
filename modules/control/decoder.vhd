@@ -29,7 +29,7 @@ architecture Behavioral of decoder is
         
 begin
 
-    ram_we <= '1' when (cpu_mem_write = '1' and unsigned(cpu_addr) < 1023) else '0';
+    ram_we <= '1' when (cpu_mem_write = '1' and unsigned(cpu_addr) < 1024) else '0';
 
     process(clk, reset)
     begin
@@ -39,10 +39,13 @@ begin
             
         elsif rising_edge(clk) then
             if cpu_mem_write = '1' then
-                if cpu_addr = x"FFF0" then
+            
+                if cpu_addr     = x"FFF0" then  -- LEDs
                     leds <= cpu_data_in;
-                elsif cpu_addr = x"FFF1" then
+                    
+                elsif cpu_addr  = x"FFF1" then  -- 7seg display
                     display <= cpu_data_in;
+                    
                 end if;
             end if;
         end if;
@@ -51,21 +54,21 @@ begin
     leds_out <= leds;
     display_out <= display;
     
-    process(cpu_addr, ram_data_out, switches_in, buttons_in, keypad_data_in)
+    process(cpu_addr, ram_data_out, switches_in, buttons_in, keypad_data_in, oled_data_out)
     begin
         if unsigned(cpu_addr) < 1024 then
             cpu_data_out <= ram_data_out; 
             
-        elsif cpu_addr = x"FFE0" then
+        elsif cpu_addr = x"FFE0" then           -- Switches
             cpu_data_out <= switches_in; 
             
-        elsif cpu_addr = x"FFE1" then
-            cpu_data_out <= "00000000000" & buttons_in; --eliminar luego
+        elsif cpu_addr = x"FFE1" then           -- Buttons
+            cpu_data_out <= "00000000000" & buttons_in; 
             
-        elsif cpu_addr = x"FFE2" then
+        elsif cpu_addr = x"FFE2" then           -- Keypad 
             cpu_data_out <= keypad_data_in; 
             
-        elsif cpu_addr = x"FFF4" then          -- SPI
+        elsif cpu_addr = x"FFF4" then           -- SPI
             cpu_data_out <= oled_data_out;            
             
         else
