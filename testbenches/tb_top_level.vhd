@@ -45,15 +45,13 @@ architecture Behavioral of tb_top_level is
     signal btn_sub     : std_logic := '0';
     signal swt         : std_logic_vector(15 downto 0) := (others => '0');
     
-    -- Inicializamos las columnas del teclado sin pulsar
-    -- (Asumiendo lógica Pmod estándar con pull-downs: "0000" es reposo)
-    signal keypad_col  : std_logic_vector(3 downto 0) := "0000";
+    signal keypad_col  : std_logic_vector(3 downto 0);
+    signal keypad_row  : std_logic_vector(3 downto 0);
 
     signal led         : std_logic_vector(15 downto 0);
     signal seg         : std_logic_vector(6 downto 0);
     signal dp          : std_logic;
     signal an          : std_logic_vector(3 downto 0);
-    signal keypad_row  : std_logic_vector(3 downto 0);
     signal oled_cs     : std_logic;
     signal oled_sdin   : std_logic;
     signal oled_sclk   : std_logic;
@@ -63,6 +61,10 @@ architecture Behavioral of tb_top_level is
     signal oled_vdd    : std_logic;
 
     constant clk_period : time := 100 ns; -- 10 MHz
+
+    -- SEÑALES PARA EMULAR EL DEDO DEL USUARIO
+    signal sim_row : integer := -1;
+    signal sim_col : integer := -1;
 
 begin
 
@@ -92,6 +94,20 @@ begin
     );
 
     -- ==========================================
+    -- EMULADOR FÍSICO DEL TECLADO MATRICIAL (Circuito Concurrente)
+    -- Esto actúa como los contactos metálicos de los botones
+    -- ==========================================
+    process(keypad_row, sim_row, sim_col)
+    begin
+        keypad_col <= "1111"; -- Por defecto, los Pull-ups tiran a '1'
+        if sim_row /= -1 and sim_col /= -1 then
+            -- Si hay un dedo puesto, la columna copia EXACTAMENTE 
+            -- lo que haga la fila en tiempo real
+            keypad_col(sim_col) <= keypad_row(sim_row);
+        end if;
+    end process;
+
+    -- ==========================================
     -- PROCESO DE GENERACIÓN DE RELOJ
     -- ==========================================
     clk_process : process
@@ -105,48 +121,57 @@ begin
     -- ==========================================
     -- PROCESO DE ESTÍMULOS PRINCIPAL
     -- ==========================================
+    -- ==========================================
+    -- PROCESO DE ESTÍMULOS PRINCIPAL
+    -- ==========================================
     stim_proc: process
     begin		
-        -- 1. ESTADO INICIAL (Reset activo y teclado suelto)
         btn_reset <= '1';
-        keypad_col <= "0000"; 
+        sim_row <= -1; sim_col <= -1; 
         wait for clk_period * 10; 
         
-        -- 2. ARRANCAR SISTEMA
         btn_reset <= '0';
-        
-        -- Esperamos a que la CPU ejecute el SETUP inicial (las instrucciones LI)
-        -- y entre de lleno en el bucle WAIT_PRESS.
-        wait for 2 us;
+        wait for 3 us; 
         
         -- ====================================================
-        -- 3. SIMULAR PULSACIÓN DEL TECLADO
+        -- 1. INTENTO FALLIDO: Metemos '8', '8', '8', '8'
+        -- Al cuarto '8', la CPU lo evaluará, fallará y reseteará la RAM.
         -- ====================================================
-        -- Activamos una columna. Cuando el keypad_controller interno
-        -- active la fila correspondiente, registrará un "hit".
-        keypad_col <= "0010";
+        --for i in 0 to 3 loop
+        --    sim_row <= 2; sim_col <= 1; -- Tecla '8'
+        --    wait for 100 us; 
+        --    sim_row <= -1; sim_col <= -1; -- Soltar
+        --    wait for 50 us; 
+        --end loop;
         
-        -- IMPORTANTE: Mantenemos la tecla pulsada el tiempo suficiente para:
-        -- a) Superar el contador del debouncer del keypad_controller.
-        -- b) Que la CPU lea la dirección 0xFFE2 y rompa el bucle WAIT_PRESS.
-        -- c) Que envíe el dato por SPI (WAIT_OLED y escritura).
-        -- Si en la simulación no ves que la CPU avanza, AUMENTA este tiempo,
-        -- o reduce el contador del debouncer en tu keypad_controller.vhd.
-        wait for 50 us; 
-        
-        -- ====================================================
-        -- 4. SIMULAR LIBERACIÓN DEL TECLADO
-        -- ====================================================
-        -- Soltamos la tecla. Esto permitirá que la CPU rompa el 
-        -- segundo bucle (WAIT_RELEASE) y vuelva al inicio.
-        keypad_col <= "0000";
-        
-        -- Observamos el sistema durante unos microsegundos más para 
-        -- verificar que la CPU vuelve a hacer polling pacíficamente.
+        -- Damos un poquito de margen para que la CPU haga la comprobación y el reset
         wait for 20 us;
 
-        -- Fin de los estímulos
+        -- ====================================================
+        -- 2. INTENTO CORRECTO: '1' -> '2' -> '3' -> '4'
+        -- ====================================================
+        -- Tecla '1'
+        sim_row <= 0; sim_col <= 0; wait for 1 ms; 
+        sim_row <= -1; sim_col <= -1; wait for 1 ms;
+
+        -- Tecla '2'
+        sim_row <= 0; sim_col <= 1; wait for 1 ms; 
+        sim_row <= -1; sim_col <= -1; wait for 1 ms;
+
+        -- Tecla '3'
+        sim_row <= 0; sim_col <= 2; wait for 1 ms; 
+        sim_row <= -1; sim_col <= -1; wait for 1 ms;
+
+        -- Tecla '4'
+        sim_row <= 1; sim_col <= 0; wait for 1 ms; 
+        sim_row <= -1; sim_col <= -1; wait for 1 ms;
+        
+        -- ====================================================
+        -- ¡AHORA SÍ! Aquí la señal `led` pasará a x"00FF"
+        -- ====================================================
         wait;
     end process;
+
+
 
 end Behavioral;

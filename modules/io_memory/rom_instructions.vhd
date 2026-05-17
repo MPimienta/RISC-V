@@ -44,56 +44,72 @@ architecture DataFlow of rom_instructions is
     type instruction_array is array (0 to 2047) of STD_LOGIC_VECTOR(15 downto 0); -- 256 espacios de 8 bits
     
     -- De momento se deja hardcodeado, pero hay que investigar cómo cargar un programa en memoria.
-constant rom_memory   :   instruction_array   := (
-        
-        -- ==========================================
-        -- 1. SETUP E INICIALIZACIÓN
-        -- ==========================================
-        0 => x"47F0", -- LI R3, -16    -> Base PANTALLA (0xFFF0)
-        1 => x"4DE0", -- LI R6, -32    -> Base TECLADO  (0xFFE0)
-        
-        -- EL TRUCO MATEMÁTICO: Sumamos 32 (0x20) en lugar de 48
-        2 => x"4820", -- LI R4, 32     -> Offset ASCII ('0' = 0x20 + valid_bit)
-        
-        3 => x"4201", -- LI R1, 1      -> Máscara "OLED Busy"
-        
-        -- ==========================================
-        -- 2. ESPERAR PULSACIÓN DEL TECLADO
-        -- ==========================================
-        -- Bucle WAIT_PRESS
-        4 => x"3B82", -- LW R5, 2(R6)   -> Leer Teclado (0xFFE2)
-        5 => x"5A3F", -- BEQ R5, R0, -1 -> Si es 0x0000 (valid=0), repite línea 4
-        
-        -- ==========================================
-        -- 3. PROCESAR DATO (Aprovechando el key_valid)
-        -- ==========================================
-        6 => x"0B60", -- ADD R5, R5, R4 -> R5 = 0x0012 + 0x0020 = 0x0032 ('2')
-        
-        -- ==========================================
-        -- 4. ESPERAR A QUE LA OLED ESTÉ LIBRE
-        -- ==========================================
-        -- Bucle WAIT_OLED
-        7 => x"3EC4", -- LW R7, 4(R3)   -> Leer Estado OLED (0xFFF4)
-        8 => x"5E7F", -- BEQ R7, R1, -1 -> Si R7 == 1 (Busy), repite línea 7
-        
-        -- ==========================================
-        -- 5. ESCRIBIR EN LA PANTALLA OLED
-        -- ==========================================
-        9 => x"2AC3", -- SW R5, 3(R3)   -> Escribir en OLED Data (0xFFF3)
-        
-        -- ==========================================
-        -- 6. ESPERAR A SOLTAR LA TECLA (Antirrebote Lógico)
-        -- ==========================================
-        -- Bucle WAIT_RELEASE
-        10=> x"3B82", -- LW R5, 2(R6)   -> Leer Teclado de nuevo
-        11=> x"6A3F", -- BNE R5, R0, -1 -> Si NO es 0x0000 (sigue pulsado), repite línea 10
-        
-        -- ==========================================
-        -- 7. VOLVER AL INICIO
-        -- ==========================================
-        12=> x"71F7", -- JAL -9         -> Saltar de vuelta a la línea 4
+constant rom_memory : instruction_array := (
+0 => x"4201",
+1 => x"47F0",
+2 => x"4DE0",
+3 => x"4800",
+4 => x"4E10",
+5 => x"441B",
+6 => x"24C2",
+7 => x"1B82",
+8 => x"057D",
+9 => x"643E",
+10 => x"2B00",
+11 => x"4411",
+12 => x"6A82",
+13 => x"7208",
+14 => x"4412",
+15 => x"6A82",
+16 => x"721A",
+17 => x"1B82",
+18 => x"057D",
+19 => x"543E",
+20 => x"73F3",
+21 => x"14C4",
+22 => x"643F",
+23 => x"4400",
+24 => x"24C3",
+25 => x"14C4",
+26 => x"643F",
+27 => x"4442",
+28 => x"24C3",
+29 => x"14C4",
+30 => x"643F",
+31 => x"447F",
+32 => x"24C3",
+33 => x"14C4",
+34 => x"643F",
+35 => x"4440",
+36 => x"24C3",
+37 => x"14C4",
+38 => x"643F",
+39 => x"4400",
+40 => x"24C3",
+41 => x"73E8",
+42 => x"14C4",
+43 => x"643F",
+44 => x"4442",
+45 => x"24C3",
+46 => x"14C4",
+47 => x"643F",
+48 => x"4461",
+49 => x"24C3",
+50 => x"14C4",
+51 => x"643F",
+52 => x"4451",
+53 => x"24C3",
+54 => x"14C4",
+55 => x"643F",
+56 => x"4449",
+57 => x"24C3",
+58 => x"14C4",
+59 => x"643F",
+60 => x"4446",
+61 => x"24C3",
+62 => x"73D3",
+others => x"0000"
 
-        others => x"0000"
     );
 begin
 
