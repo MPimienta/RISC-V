@@ -11,7 +11,7 @@ entity oled_spi_mmio is
         cpu_addr      : in std_logic_vector(15 downto 0);
         cpu_data_in   : in std_logic_vector(15 downto 0);
         cpu_we        : in std_logic;
-        cpu_data_out  : out std_logic_vector(15 downto 0);
+        cpu_data_out  : out std_logic;
         
         -- Pines físicos hacia la PmodOLED
         oled_cs       : out std_logic;
@@ -56,9 +56,9 @@ begin
     -- Proceso de Lectura del Bus (Asíncrono para el decodificador)
     process(cpu_addr, status_busy)
     begin
-        cpu_data_out <= (others => '0');
+        cpu_data_out <= '0';
         if cpu_addr = x"FFF4" then
-            cpu_data_out(0) <= status_busy;
+            cpu_data_out <= status_busy;
         end if;
     end process;
 

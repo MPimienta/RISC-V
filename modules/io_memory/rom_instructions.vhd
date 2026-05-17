@@ -45,33 +45,53 @@ architecture DataFlow of rom_instructions is
     
     -- De momento se deja hardcodeado, pero hay que investigar cómo cargar un programa en memoria.
 constant rom_memory   :   instruction_array   := (
-        -- === SETUP (Inicialización) ===
-        0 => x"4201", -- LI R1, 1    
-        1 => x"440A", -- LI R2, 10   
         
-        -- CORRECCIÓN: LI R3, -16 (Al extender el signo, R3 se convierte en 0xFFF0)
-        2 => x"47F0", -- LI R3, -16  -> Base para Periféricos de Salida
+        -- ==========================================
+        -- 1. SETUP E INICIALIZACIÓN
+        -- ==========================================
+        0 => x"47F0", -- LI R3, -16    -> Base PANTALLA (0xFFF0)
+        1 => x"4DE0", -- LI R6, -32    -> Base TECLADO  (0xFFE0)
         
-        3 => x"4800", -- LI R4, 0x00 -> Base para RAM
-        4 => x"4A05", -- LI R5, 5    
-
-        -- === BUCLE PRINCIPAL ===
-        5 => x"0248", -- ADD R1, R1, R1 (Duplicar)
+        -- EL TRUCO MATEMÁTICO: Sumamos 32 (0x20) en lugar de 48
+        2 => x"4820", -- LI R4, 32     -> Offset ASCII ('0' = 0x20 + valid_bit)
         
-        -- Escribir en Periféricos
-        6 => x"22C0", -- SW R1, 0(R3) -> LEDs = R1 (Dirección 0xFFF0 + 0 = 0xFFF0)
-        -- Truco: Si quisieras escribir R1 en el Display (0xFFF1), usarías un offset de 1:
-        -- SW R1, 1(R3) -> x"22C1" 
-
-        -- Escribir en RAM
-        7 => x"2300", -- SW R1, 0(R4) -> RAM[0] = R1
-
-        8 => x"04A8", -- ADD R2, R2, R5 (Sumar 5)
+        3 => x"4201", -- LI R1, 1      -> Máscara "OLED Busy"
         
-        9 => x"24C0", -- SW R2, 0(R3) -> LEDs = R2
-        10=> x"2501", -- SW R2, 1(R4) -> RAM[1] = R2
-
-        11=> x"71F9", -- JAL 5 (Volver al bucle)
+        -- ==========================================
+        -- 2. ESPERAR PULSACIÓN DEL TECLADO
+        -- ==========================================
+        -- Bucle WAIT_PRESS
+        4 => x"3B82", -- LW R5, 2(R6)   -> Leer Teclado (0xFFE2)
+        5 => x"5A3F", -- BEQ R5, R0, -1 -> Si es 0x0000 (valid=0), repite línea 4
+        
+        -- ==========================================
+        -- 3. PROCESAR DATO (Aprovechando el key_valid)
+        -- ==========================================
+        6 => x"0B60", -- ADD R5, R5, R4 -> R5 = 0x0012 + 0x0020 = 0x0032 ('2')
+        
+        -- ==========================================
+        -- 4. ESPERAR A QUE LA OLED ESTÉ LIBRE
+        -- ==========================================
+        -- Bucle WAIT_OLED
+        7 => x"3EC4", -- LW R7, 4(R3)   -> Leer Estado OLED (0xFFF4)
+        8 => x"5E7F", -- BEQ R7, R1, -1 -> Si R7 == 1 (Busy), repite línea 7
+        
+        -- ==========================================
+        -- 5. ESCRIBIR EN LA PANTALLA OLED
+        -- ==========================================
+        9 => x"2AC3", -- SW R5, 3(R3)   -> Escribir en OLED Data (0xFFF3)
+        
+        -- ==========================================
+        -- 6. ESPERAR A SOLTAR LA TECLA (Antirrebote Lógico)
+        -- ==========================================
+        -- Bucle WAIT_RELEASE
+        10=> x"3B82", -- LW R5, 2(R6)   -> Leer Teclado de nuevo
+        11=> x"6A3F", -- BNE R5, R0, -1 -> Si NO es 0x0000 (sigue pulsado), repite línea 10
+        
+        -- ==========================================
+        -- 7. VOLVER AL INICIO
+        -- ==========================================
+        12=> x"71F7", -- JAL -9         -> Saltar de vuelta a la línea 4
 
         others => x"0000"
     );

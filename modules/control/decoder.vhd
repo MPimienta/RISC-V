@@ -17,7 +17,7 @@ entity decoder is
         keypad_data_in: in std_logic_vector(15 downto 0);
         leds_out      : out std_logic_vector(15 downto 0);
         display_out   : out std_logic_vector(15 downto 0);
-        oled_data_out : in std_logic_vector(15 downto 0)
+        oled_data_out : in std_logic 
 
     );
 end decoder;
@@ -69,7 +69,7 @@ begin
             cpu_data_out <= keypad_data_in; 
             
         elsif cpu_addr = x"FFF4" then           -- SPI
-            cpu_data_out <= oled_data_out;            
+            cpu_data_out <= "000000000000000" & oled_data_out;            
             
         else
             cpu_data_out <= (others => '0');

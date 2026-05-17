@@ -38,16 +38,17 @@ architecture Behavioral of tb_top_level is
     -- ==========================================
     -- SEÑALES INTERNAS PARA EL TESTBENCH
     -- ==========================================
-    -- Entradas (inicializadas a 0)
     signal clk         : std_logic := '0';
     signal btn_clk     : std_logic := '0';
     signal btn_reset   : std_logic := '0';
     signal btn_add     : std_logic := '0';
     signal btn_sub     : std_logic := '0';
     signal swt         : std_logic_vector(15 downto 0) := (others => '0');
+    
+    -- Inicializamos las columnas del teclado sin pulsar
+    -- (Asumiendo lógica Pmod estándar con pull-downs: "0000" es reposo)
     signal keypad_col  : std_logic_vector(3 downto 0) := "0000";
 
-    -- Salidas
     signal led         : std_logic_vector(15 downto 0);
     signal seg         : std_logic_vector(6 downto 0);
     signal dp          : std_logic;
@@ -61,8 +62,7 @@ architecture Behavioral of tb_top_level is
     signal oled_vbat   : std_logic;
     signal oled_vdd    : std_logic;
 
-    -- Definición del periodo del reloj (10 MHz = 100 ns)
-    constant clk_period : time := 100 ns;
+    constant clk_period : time := 100 ns; -- 10 MHz
 
 begin
 
@@ -107,29 +107,45 @@ begin
     -- ==========================================
     stim_proc: process
     begin		
-        -- 1. Estado inicial: Mantener el sistema en reset
+        -- 1. ESTADO INICIAL (Reset activo y teclado suelto)
         btn_reset <= '1';
-        swt <= x"0000";
-        wait for clk_period * 5; 
+        keypad_col <= "0000"; 
+        wait for clk_period * 10; 
         
-        -- 2. Liberar el reset (La CPU empieza a hacer fetch en la ROM)
+        -- 2. ARRANCAR SISTEMA
         btn_reset <= '0';
         
-        -- Dejar que la CPU ejecute instrucciones un tiempo...
-        wait for clk_period * 50;
+        -- Esperamos a que la CPU ejecute el SETUP inicial (las instrucciones LI)
+        -- y entre de lleno en el bucle WAIT_PRESS.
+        wait for 2 us;
         
-        -- 3. (Opcional) Simular interacción del usuario
-        -- Por ejemplo, encender el switch 0 para que la CPU lo lea por MMIO
-        swt <= x"0001";
-        wait for clk_period * 50;
+        -- ====================================================
+        -- 3. SIMULAR PULSACIÓN DEL TECLADO
+        -- ====================================================
+        -- Activamos una columna. Cuando el keypad_controller interno
+        -- active la fila correspondiente, registrará un "hit".
+        keypad_col <= "0010";
         
-        -- Encender un botón
-        btn_add <= '1';
-        wait for clk_period * 10;
-        btn_add <= '0';
+        -- IMPORTANTE: Mantenemos la tecla pulsada el tiempo suficiente para:
+        -- a) Superar el contador del debouncer del keypad_controller.
+        -- b) Que la CPU lea la dirección 0xFFE2 y rompa el bucle WAIT_PRESS.
+        -- c) Que envíe el dato por SPI (WAIT_OLED y escritura).
+        -- Si en la simulación no ves que la CPU avanza, AUMENTA este tiempo,
+        -- o reduce el contador del debouncer en tu keypad_controller.vhd.
+        wait for 50 us; 
+        
+        -- ====================================================
+        -- 4. SIMULAR LIBERACIÓN DEL TECLADO
+        -- ====================================================
+        -- Soltamos la tecla. Esto permitirá que la CPU rompa el 
+        -- segundo bucle (WAIT_RELEASE) y vuelva al inicio.
+        keypad_col <= "0000";
+        
+        -- Observamos el sistema durante unos microsegundos más para 
+        -- verificar que la CPU vuelve a hacer polling pacíficamente.
+        wait for 20 us;
 
-        -- Dejar el sistema corriendo indefinidamente
-        -- (En Vivado deberás pausar la simulación manualmente o definir un tiempo de fin)
+        -- Fin de los estímulos
         wait;
     end process;
 

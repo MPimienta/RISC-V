@@ -1,0 +1,50 @@
+constant rom_memory   :   instruction_array   := (
+        
+        -- ==========================================
+        -- 1. SETUP E INICIALIZACIÓN
+        -- ==========================================
+        0 => x"47F0", -- LI R3, -16    -> Base PANTALLA (0xFFF0)
+        1 => x"4DE0", -- LI R6, -32    -> Base TECLADO  (0xFFE0)
+        2 => x"45FF", -- LI R2, -1     -> Máscara "No pulsado" (0xFFFF)
+        3 => x"4830", -- LI R4, 48     -> Offset ASCII ('0' = 0x30)
+        4 => x"4301", -- LI R1, 1      -> Máscara "OLED Busy"
+        
+        -- ==========================================
+        -- 2. ESPERAR PULSACIÓN DEL TECLADO
+        -- ==========================================
+        -- Bucle WAIT_PRESS
+        5 => x"3B82", -- LW R5, 2(R6)  -> Leer Teclado (0xFFE0 + 2 = 0xFFE2)
+        6 => x"5ABF", -- BEQ R5, R2, -1 -> Si es 0xFFFF (no pulsado), repite línea 5
+        
+        -- ==========================================
+        -- 3. PROCESAR DATO (Conversión a ASCII)
+        -- ==========================================
+        7 => x"0B60", -- ADD R5, R5, R4 -> R5 = Tecla + 48 (Convierte a caracter ASCII)
+        
+        -- ==========================================
+        -- 4. ESPERAR A QUE LA OLED ESTÉ LIBRE
+        -- ==========================================
+        -- Bucle WAIT_OLED
+        8 => x"3EC4", -- LW R7, 4(R3)  -> Leer Estado OLED (0xFFF0 + 4 = 0xFFF4)
+        9 => x"5E7F", -- BEQ R7, R1, -1 -> Si R7 == 1 (Busy), repite línea 8
+        
+        -- ==========================================
+        -- 5. ESCRIBIR EN LA PANTALLA OLED
+        -- ==========================================
+        10=> x"2AC3", -- SW R5, 3(R3)  -> Escribir en OLED Data (0xFFF0 + 3 = 0xFFF3)
+        
+        -- ==========================================
+        -- 6. ESPERAR A SOLTAR LA TECLA (Antirrebote Lógico)
+        -- ==========================================
+        -- Bucle WAIT_RELEASE
+        11=> x"3B82", -- LW R5, 2(R6)  -> Leer Teclado de nuevo
+        12=> x"6ABF", -- BNE R5, R2, -1 -> Si NO es 0xFFFF (sigue pulsado), repite línea 11
+        
+        -- ==========================================
+        -- 7. VOLVER AL INICIO
+        -- ==========================================
+        13=> x"71F7", -- JAL -9        -> Saltar de vuelta a la línea 5
+
+        others => x"0000"
+    );
+

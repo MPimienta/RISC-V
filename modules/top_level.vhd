@@ -107,7 +107,7 @@ architecture Structural of top_level is
             keypad_data_in: in std_logic_vector(15 downto 0);
             leds_out      : out std_logic_vector(15 downto 0);
             display_out   : out std_logic_vector(15 downto 0);
-            oled_data_out : in std_logic_vector(15 downto 0)
+            oled_data_out : in std_logic
         );
     end component;
 
@@ -138,7 +138,7 @@ architecture Structural of top_level is
             cpu_addr        : in std_logic_vector(15 downto 0);
             cpu_data_in     : in std_logic_vector(15 downto 0);
             cpu_we          : in std_logic;
-            cpu_data_out    : out std_logic_vector(15 downto 0);
+            cpu_data_out    : out std_logic;
             oled_cs         : out std_logic ;
             oled_sdin       : out std_logic ;
             oled_sclk       : out std_logic ;
@@ -164,19 +164,36 @@ architecture Structural of top_level is
     
     -- Señales de Periféricos al Decoder
     signal sig_keypad_data : std_logic_vector(15 downto 0);
-    signal sig_oled_data   : std_logic_vector(15 downto 0);
+    signal sig_oled_data   : std_logic;
     signal sig_display_in  : std_logic_vector(15 downto 0);
     
-    -- Señal auxiliar para botones (si mantienes los pines discretos)
+    -- Señal auxiliar para botones
     signal sig_buttons_concat : std_logic_vector(4 downto 0);
+    
+    -- Divisor de frecuencia
+    signal clk_div_counter  : integer := 0;
+    signal clk_10mhz        : std_logic := '0';
 
 
 
 begin
-    -- 1. Núcleo RISC-V
+
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            if clk_div_counter = 4 then
+                clk_10mhz <= not clk_10mhz;
+                clk_div_counter <= 0;
+            else
+                clk_div_counter <= clk_div_counter + 1;
+            end if;
+        end if;
+    end process;
+    
+    
     inst_cpu: riscv
         Port map (
-            clk         => clk,
+            clk         => clk_10mhz,
             reset       => btn_reset,
             inst_addr   => sig_inst_addr,
             instruction => sig_inst_data,
@@ -186,17 +203,15 @@ begin
             write_en    => sig_mem_write
         );
 
-    -- 2. Memoria de Instrucciones (ROM)
     inst_rom: rom_instructions
         Port map (
             instruction_addr => sig_inst_addr,
             instruction_out  => sig_inst_data
         );
 
-    -- 3. Decodificador de Direcciones (El enrutador central)
     inst_decoder: decoder
         Port map (
-            clk            => clk,
+            clk            => clk_10mhz,
             reset          => btn_reset,
             cpu_addr       => sig_data_addr,
             cpu_data_in    => sig_cpu_to_mem,
@@ -214,20 +229,18 @@ begin
         
     sig_buttons_concat <= "000" & btn_add & btn_sub;
 
-    -- 4. Memoria RAM de Datos
     inst_ram: ram_data
         Port map (
-            clk       => clk,
+            clk       => clk_10mhz,
             write_en  => sig_ram_we,
             data_addr => sig_data_addr,
             data_in   => sig_cpu_to_mem,
             data_out  => sig_ram_data_out
         );
 
-    -- 5. Controlador Display 7 Segmentos
     inst_7seg: seven_seg_decoder
         Port map (
-            clk     => clk,
+            clk     => clk_10mhz,
             reset   => btn_reset,
             data_in => sig_display_in,
             seg     => seg,
@@ -235,20 +248,18 @@ begin
             an      => an
         );
 
-    -- 6. Controlador Teclado Matricial
     inst_keypad: keypad_controller
         Port map (
-            clk        => clk,
+            clk        => clk_10mhz,
             reset      => btn_reset,
             keypad_col => keypad_col,
             keypad_row => keypad_row,
             data_out   => sig_keypad_data
         );
 
-    -- 7. Controlador OLED SPI
     inst_oled_spi: oled_spi_mmio
         Port map (
-            clk          => clk,
+            clk          => clk_10mhz,
             reset        => btn_reset,
             cpu_addr     => sig_data_addr,
             cpu_data_in  => sig_cpu_to_mem,
