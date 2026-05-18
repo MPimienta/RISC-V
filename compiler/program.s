@@ -41,11 +41,27 @@
     JAL r1, SPI_SEND
 
 # ==============================================================================
-# 4. PASAR A MODO DATO Y ARRANCAR PROGRAMA
+# 4. PASAR A MODO DATO Y LIMPIAR LA PANTALLA (Borrar el ruido)
 # ==============================================================================
-    LI r2, 27             # 11011b: VBAT=1, VDD=1, CS=0, RES=1, DC=1 (Modo Dato)
+    LI r2, 27             # 11011b: Modo Dato (DC=1) para empezar a dibujar ceros
     SW r2, 2(r3)
-    JAL r0, WAIT_PRESS    # Salta al bucle principal
+
+    # Vamos a enviar 512 ceros (4 rondas de 128)
+    LI r5, 4              # Bucle exterior: 4 páginas
+CLEAR_PAGES:
+    LI r4, 128            # Bucle interior: 128 columnas
+CLEAR_COLS:
+    LI r2, 0              # Dato: 0x00 (Columna en blanco)
+    JAL r1, SPI_SEND      # Enviar por SPI
+    ADDI r4, r4, -1       # Restar 1 al contador de columnas
+    BNE r4, r0, CLEAR_COLS# Si no es 0, sigue con la columna
+    
+    ADDI r5, r5, -1       # Restar 1 al contador de páginas
+    BNE r5, r0, CLEAR_PAGES# Si no es 0, sigue con la siguiente página
+
+    LI r4, 0              # ¡IMPORTANTE! Restauramos el r4 a 0 para usarlo como puntero de RAM luego
+
+    JAL r0, WAIT_PRESS    # Salta al bucle principal para evitar ejecutar SPI_SEND por accidente
 
 # ==============================================================================
 # SUBRUTINA: ENVIAR POR SPI Y ESPERAR (Reutilizable)
