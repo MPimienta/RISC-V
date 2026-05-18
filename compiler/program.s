@@ -1,97 +1,119 @@
-LI R1, 1
-    LI R3, -16
-    LI R6, -32
-    LI R4, 0
-    LI R7, 16
+# ==============================================================================
+# 1. SETUP DE CONSTANTES Y PUNTEROS
+# ==============================================================================
+    LI r3, -16            # r3 = Base OLED (0xFFF0)
+    LI r6, -32            # r6 = Base Keypad (0xFFE0)
+    LI r4, 0              # r4 = Puntero RAM (Dirección 0)
+    LI r7, 16             # r7 = Máscara para bit key_valid (0x0010)
 
-    LI R2, 27
-    SW R2, 2(R3)
+# ==============================================================================
+# 2. SECUENCIA DE ENERGÍA PANTALLA OLED (SSD1306)
+# ==============================================================================
+# Escribimos en el registro de Control (0xFFF2). 
+# Bits: 4=VBAT, 3=VDD, 2=CS(0=Activo), 1=RES(0=Reset), 0=DC(0=Comando)
 
+    LI r2, 8              # 01000b: VDD=1, CS=0, RES=0, DC=0
+    SW r2, 2(r3)
+    
+    LI r2, 10             # 01010b: VDD=1, CS=0, RES=1, DC=0 (Quita el reset)
+    SW r2, 2(r3)
+    
+    LI r2, 26             # 11010b: VBAT=1, VDD=1, CS=0, RES=1, DC=0
+    SW r2, 2(r3)
+
+# ==============================================================================
+# 3. ENVIAR COMANDOS DE INICIALIZACIÓN (Usando Subrutina)
+# ==============================================================================
+    LI r2, 174            # Comando 0xAE: Display OFF
+    JAL r1, SPI_SEND
+
+    LI r2, 141            # Comando 0x8D: Charge Pump
+    JAL r1, SPI_SEND
+    LI r2, 20             # Valor 0x14: Enable
+    JAL r1, SPI_SEND
+
+    LI r2, 32             # Comando 0x20: Memory Mode
+    JAL r1, SPI_SEND
+    LI r2, 0              # Valor 0x00: Modo Horizontal
+    JAL r1, SPI_SEND
+
+    LI r2, 175            # Comando 0xAF: Display ON
+    JAL r1, SPI_SEND
+
+# ==============================================================================
+# 4. PASAR A MODO DATO Y ARRANCAR PROGRAMA
+# ==============================================================================
+    LI r2, 27             # 11011b: VBAT=1, VDD=1, CS=0, RES=1, DC=1 (Modo Dato)
+    SW r2, 2(r3)
+    JAL r0, WAIT_PRESS    # Salta al bucle principal
+
+# ==============================================================================
+# SUBRUTINA: ENVIAR POR SPI Y ESPERAR (Reutilizable)
+# ==============================================================================
+SPI_SEND:
+    SW r2, 3(r3)          # Envia el valor de r2 por SPI Data (0xFFF3)
+SPI_WAIT:
+    LW r2, 4(r3)          # Lee OLED Status (0xFFF4)
+    BNE r2, r0, SPI_WAIT  # Bucle si status != 0 (OLED Busy)
+    JALR r0, r1, 0        # Retorna a la instrucción guardada en r1 (ra)
+
+# ==============================================================================
+# 5. BUCLE PRINCIPAL: ESPERAR PULSACIÓN
+# ==============================================================================
 WAIT_PRESS:
-    LW R5, 2(R6)
-    SLT R2, R5, R7
-    BNE R2, R0, WAIT_PRESS
+    LW r5, 2(r6)          # Lee el teclado (0xFFE2)
+    SLT r2, r5, r7        # Si r5 < 16 (soltado), r2 = 1. Si r5 >= 16, r2 = 0.
+    BNE r2, r0, WAIT_PRESS# Si r2 != 0 (tecla soltada), sigue esperando
 
-    SW R5, 0(R4)
+    SW r5, 0(r4)          # Guardamos el valor leído en RAM[0]
 
+# ==============================================================================
+# 6. DECODIFICADOR (SWITCH-CASE)
+# ==============================================================================
 CHECK_1:
-    LI R2, 17
-    BNE R5, R2, CHECK_2
-    JAL DRAW_1
+    LI r2, 17             # 0x11 (Valor del '1')
+    BNE r5, r2, CHECK_2   # Si r5 != '1', pasa a comprobar el '2'
+    JAL r0, DRAW_1        # Si es '1', salta a dibujar
 
 CHECK_2:
-    LI R2, 18
-    BNE R5, R2, WAIT_RELEASE
-    JAL DRAW_2
+    LI r2, 18             # 0x12 (Valor del '2')
+    BNE r5, r2, WAIT_RELEASE # Si r5 != '2', ignoramos y esperamos
+    JAL r0, DRAW_2        # Si es '2', salta a dibujar
 
+# ==============================================================================
+# 7. BUCLE: ESPERAR A QUE EL DEDO SUELTE LA TECLA
+# ==============================================================================
 WAIT_RELEASE:
-    LW R5, 2(R6)
-    SLT R2, R5, R7
-    BEQ R2, R0, WAIT_RELEASE
-    JAL WAIT_PRESS
+    LW r5, 2(r6)          # Lee el teclado
+    SLT r2, r5, r7        # r2 = 1 si soltado (r5 < 16), r2 = 0 si pulsado
+    BEQ r2, r0, WAIT_RELEASE # Si r2 == 0 (sigue pulsado), sigue esperando
+    JAL r0, WAIT_PRESS    # Si soltado, vuelve al inicio a por otra tecla
 
+# ==============================================================================
+# 8. RUTINAS DE DIBUJO (OLED) - ¡Súper compactas gracias a la subrutina!
+# ==============================================================================
 DRAW_1:
-    OLED_WAIT_1_1:
-        LW R2, 4(R3)
-        BNE R2, R0, OLED_WAIT_1_1
-    LI R2, 0
-    SW R2, 3(R3)
-
-    OLED_WAIT_1_2:
-        LW R2, 4(R3)
-        BNE R2, R0, OLED_WAIT_1_2
-    LI R2, 66
-    SW R2, 3(R3)
-
-    OLED_WAIT_1_3:
-        LW R2, 4(R3)
-        BNE R2, R0, OLED_WAIT_1_3
-    LI R2, 127
-    SW R2, 3(R3)
-
-    OLED_WAIT_1_4:
-        LW R2, 4(R3)
-        BNE R2, R0, OLED_WAIT_1_4
-    LI R2, 64
-    SW R2, 3(R3)
-
-    OLED_WAIT_1_5:
-        LW R2, 4(R3)
-        BNE R2, R0, OLED_WAIT_1_5
-    LI R2, 0
-    SW R2, 3(R3)
-
-    JAL WAIT_RELEASE
+    LI r2, 0              # Columna 1
+    JAL r1, SPI_SEND
+    LI r2, 66             # Columna 2
+    JAL r1, SPI_SEND
+    LI r2, 127            # Columna 3
+    JAL r1, SPI_SEND
+    LI r2, 64             # Columna 4
+    JAL r1, SPI_SEND
+    LI r2, 0              # Columna 5
+    JAL r1, SPI_SEND
+    JAL r0, WAIT_RELEASE  # Termina de dibujar y va a esperar
 
 DRAW_2:
-    OLED_WAIT_2_1:
-        LW R2, 4(R3)
-        BNE R2, R0, OLED_WAIT_2_1
-    LI R2, 66
-    SW R2, 3(R3)
-
-    OLED_WAIT_2_2:
-        LW R2, 4(R3)
-        BNE R2, R0, OLED_WAIT_2_2
-    LI R2, 97
-    SW R2, 3(R3)
-
-    OLED_WAIT_2_3:
-        LW R2, 4(R3)
-        BNE R2, R0, OLED_WAIT_2_3
-    LI R2, 81
-    SW R2, 3(R3)
-
-    OLED_WAIT_2_4:
-        LW R2, 4(R3)
-        BNE R2, R0, OLED_WAIT_2_4
-    LI R2, 73
-    SW R2, 3(R3)
-
-    OLED_WAIT_2_5:
-        LW R2, 4(R3)
-        BNE R2, R0, OLED_WAIT_2_5
-    LI R2, 70
-    SW R2, 3(R3)
-
-    JAL WAIT_RELEASE
+    LI r2, 66             # Columna 1
+    JAL r1, SPI_SEND
+    LI r2, 97             # Columna 2
+    JAL r1, SPI_SEND
+    LI r2, 81             # Columna 3
+    JAL r1, SPI_SEND
+    LI r2, 73             # Columna 4
+    JAL r1, SPI_SEND
+    LI r2, 70             # Columna 5
+    JAL r1, SPI_SEND
+    JAL r0, WAIT_RELEASE  # Termina de dibujar y va a esperar
