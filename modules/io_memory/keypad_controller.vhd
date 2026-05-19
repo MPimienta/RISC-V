@@ -90,26 +90,26 @@ begin
                     -- Fila 3: 0 F E D
                     
                     case current_row_val is
-                        when "1110" => -- Fila 0 activa
-                            if keypad_col(0)='0' then key_value <= x"1"; end if;
-                            if keypad_col(1)='0' then key_value <= x"2"; end if;
-                            if keypad_col(2)='0' then key_value <= x"3"; end if;
-                            if keypad_col(3)='0' then key_value <= x"A"; end if;
-                        when "1101" => -- Fila 1 activa
-                            if keypad_col(0)='0' then key_value <= x"4"; end if;
-                            if keypad_col(1)='0' then key_value <= x"5"; end if;
-                            if keypad_col(2)='0' then key_value <= x"6"; end if;
-                            if keypad_col(3)='0' then key_value <= x"B"; end if;
-                        when "1011" => -- Fila 2 activa
-                            if keypad_col(0)='0' then key_value <= x"7"; end if;
-                            if keypad_col(1)='0' then key_value <= x"8"; end if;
-                            if keypad_col(2)='0' then key_value <= x"9"; end if;
-                            if keypad_col(3)='0' then key_value <= x"C"; end if;
-                        when "0111" => -- Fila 3 activa
-                            if keypad_col(0)='0' then key_value <= x"E"; end if; 
-                            if keypad_col(1)='0' then key_value <= x"0"; end if;
-                            if keypad_col(2)='0' then key_value <= x"F"; end if; 
-                            if keypad_col(3)='0' then key_value <= x"D"; end if;
+                        when "0111" => -- Fila 0 activa
+                            if keypad_col(3)='0' then key_value <= x"1"; end if;
+                            if keypad_col(2)='0' then key_value <= x"2"; end if;
+                            if keypad_col(1)='0' then key_value <= x"3"; end if;
+                            if keypad_col(0)='0' then key_value <= x"A"; end if;
+                        when "1011" => -- Fila 1 activa
+                            if keypad_col(3)='0' then key_value <= x"4"; end if;
+                            if keypad_col(2)='0' then key_value <= x"5"; end if;
+                            if keypad_col(1)='0' then key_value <= x"6"; end if;
+                            if keypad_col(0)='0' then key_value <= x"B"; end if;
+                        when "1101" => -- Fila 2 activa
+                            if keypad_col(3)='0' then key_value <= x"7"; end if;
+                            if keypad_col(2)='0' then key_value <= x"8"; end if;
+                            if keypad_col(1)='0' then key_value <= x"9"; end if;
+                            if keypad_col(0)='0' then key_value <= x"C"; end if;
+                        when "1110" => -- Fila 3 activa
+                            if keypad_col(3)='0' then key_value <= x"0"; end if; 
+                            if keypad_col(2)='0' then key_value <= x"F"; end if;
+                            if keypad_col(1)='0' then key_value <= x"E"; end if; 
+                            if keypad_col(0)='0' then key_value <= x"D"; end if;
                         when others => 
                             null;
                     end case;
