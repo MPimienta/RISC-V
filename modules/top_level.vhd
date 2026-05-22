@@ -61,6 +61,10 @@ end top_level;
 
 
 architecture Structural of top_level is
+    component freq_divider is
+    Port ( clk_in : in STD_LOGIC;
+           clk_out : out STD_LOGIC);
+    end component;
 
     component riscv is
         Port (
@@ -170,30 +174,22 @@ architecture Structural of top_level is
     -- Señal auxiliar para botones
     signal sig_buttons_concat : std_logic_vector(4 downto 0);
     
-    -- Divisor de frecuencia
-    signal clk_div_counter  : integer := 0;
-    signal clk_10mhz        : std_logic := '0';
+    signal clk_div : std_logic := '0';
 
 
 
 begin
 
-    process(clk)
-    begin
-        if rising_edge(clk) then
-            if clk_div_counter = 4 then
-                clk_10mhz <= not clk_10mhz;
-                clk_div_counter <= 0;
-            else
-                clk_div_counter <= clk_div_counter + 1;
-            end if;
-        end if;
-    end process;
+    inst_freq_div: freq_divider
+        Port map (
+            clk_in  => clk,
+            clk_out => clk_div
+        );
     
     
     inst_cpu: riscv
         Port map (
-            clk         => clk_10mhz,
+            clk         => clk_div,
             reset       => btn_reset,
             inst_addr   => sig_inst_addr,
             instruction => sig_inst_data,
@@ -211,7 +207,7 @@ begin
 
     inst_decoder: decoder
         Port map (
-            clk            => clk_10mhz,
+            clk            => clk_div,
             reset          => btn_reset,
             cpu_addr       => sig_data_addr,
             cpu_data_in    => sig_cpu_to_mem,
@@ -231,7 +227,7 @@ begin
 
     inst_ram: ram_data
         Port map (
-            clk       => clk_10mhz,
+            clk       => clk_div,
             write_en  => sig_ram_we,
             data_addr => sig_data_addr,
             data_in   => sig_cpu_to_mem,
@@ -240,7 +236,7 @@ begin
 
     inst_7seg: seven_seg_decoder
         Port map (
-            clk     => clk_10mhz,
+            clk     => clk_div,
             reset   => btn_reset,
             data_in => sig_display_in,
             seg     => seg,
@@ -250,7 +246,7 @@ begin
 
     inst_keypad: keypad_controller
         Port map (
-            clk        => clk_10mhz,
+            clk        => clk_div,
             reset      => btn_reset,
             keypad_col => keypad_col,
             keypad_row => keypad_row,
@@ -259,7 +255,7 @@ begin
 
     inst_oled_spi: oled_spi_mmio
         Port map (
-            clk          => clk_10mhz,
+            clk          => clk_div,
             reset        => btn_reset,
             cpu_addr     => sig_data_addr,
             cpu_data_in  => sig_cpu_to_mem,
