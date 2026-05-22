@@ -33,28 +33,23 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity seven_seg_decoder is
     Port (
-        clk      : in  std_logic;                    -- Reloj de 100 MHz de la placa
-        reset    : in  std_logic;                    -- Reset global
-        data_in  : in  std_logic_vector(15 downto 0); -- Dato de 16 bits a mostrar (ej. el PC)
-        seg      : out std_logic_vector(6 downto 0); -- Segmentos A-G
-        dp       : out std_logic;                    -- Punto decimal
-        an       : out std_logic_vector(3 downto 0)  -- Ánodos de los 4 displays
+        clk      : in  std_logic;
+        reset    : in  std_logic;   
+        data_in  : in  std_logic_vector(15 downto 0); 
+        seg      : out std_logic_vector(6 downto 0); 
+        dp       : out std_logic;                 
+        an       : out std_logic_vector(3 downto 0)  
     );
 end seven_seg_decoder;
 
 architecture Behavioral of seven_seg_decoder is
 
-    -- Señales para el divisor de reloj (para el refresco de los displays)
     signal refresh_counter : unsigned(19 downto 0) := (others => '0');
     signal led_activating_counter : std_logic_vector(1 downto 0);
-
-    -- Señales para decodificar el dígito actual
     signal current_digit : std_logic_vector(3 downto 0);
 
 begin
 
-    -- Divisor de frecuencia para el refresco (multiplexación) de los displays
-    -- Necesitamos una frecuencia lo suficientemente rápida para que no parpadee (ej. 1 kHz)
     process(clk, reset)
     begin
         if reset = '1' then
@@ -64,14 +59,13 @@ begin
         end if;
     end process;
 
-    -- Usamos los bits superiores del contador para cambiar de display
+    -- Comentar para simulación
     --led_activating_counter <= std_logic_vector(refresh_counter(19 downto 18));
     
     -- comentar para implementación
     led_activating_counter <= std_logic_vector(refresh_counter(3 downto 2));
 
-    -- Multiplexor para activar los ánodos (encendemos un display a la vez)
-process(led_activating_counter, data_in) -- <-- Añade data_in a la lista sensible
+process(led_activating_counter, data_in) 
     begin
         case led_activating_counter is
             when "00" =>
@@ -88,11 +82,10 @@ process(led_activating_counter, data_in) -- <-- Añade data_in a la lista sensib
                 current_digit <= data_in(3 downto 0);
             when others =>
                 an <= "1111";
-                current_digit <= "0000"; -- <-- ESTO por seguridad
+                current_digit <= "0000"; 
         end case;
     end process;
 
-    -- Decodificador BCD a 7 Segmentos (Ánodo Común: 0 = Encendido, 1 = Apagado)
     process(current_digit)
     begin
         case current_digit is
@@ -116,7 +109,6 @@ process(led_activating_counter, data_in) -- <-- Añade data_in a la lista sensib
         end case;
     end process;
 
-    -- Apagamos el punto decimal
     dp <= '1';
 
 end Behavioral;

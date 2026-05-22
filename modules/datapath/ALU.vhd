@@ -4,11 +4,11 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity ALU is
     Port ( 
-            A       :   in  std_logic_vector (15 downto 0); -- Valor 
-            B       :   in  std_logic_vector (15 downto 0); -- Valor de memoria / inmediato
-            ALU_Sel :   in  std_logic_vector (2 downto 0); -- Código de Selección de instrucción
+            A       :   in  std_logic_vector (15 downto 0); 
+            B       :   in  std_logic_vector (15 downto 0);
+            ALU_Sel :   in  std_logic_vector (2 downto 0); 
             Result  :   out std_logic_vector (15 downto 0);
-            Zero    :   out std_logic -- Flag útil para BEQ, se activa cuando Result = 0
+            Zero    :   out std_logic 
             );
 end ALU;
 
@@ -18,10 +18,8 @@ architecture Dataflow of ALU is
     signal res_internal : std_logic_vector(15 downto 0);
 begin
 
-    -- Lógica para SLT (Set Less Than)
     res_slt <= "0000000000000001" when (signed(A) < signed(B)) else "0000000000000000";
 
-    -- Lógica para SLL (Shift Left Logical)
     res_sll <= std_logic_vector(shift_left(unsigned(A), to_integer(unsigned(B(3 downto 0)))));
 
     res_internal <= 

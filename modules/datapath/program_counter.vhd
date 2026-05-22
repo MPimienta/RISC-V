@@ -27,8 +27,8 @@ entity program_counter is
     Port (
         clk      : in  std_logic;
         reset    : in  std_logic;
-        pc_en    : in  std_logic;                    -- Solo avanza cuando la UC lo pide
-        load     : in  std_logic;                    -- Para saltos BEQ/JAL 
+        pc_en    : in  std_logic;
+        load     : in  std_logic;
         d_in     : in  std_logic_vector(15 downto 0); 
         pc_out   : out std_logic_vector(15 downto 0)
     );

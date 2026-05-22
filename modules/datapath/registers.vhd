@@ -35,15 +35,15 @@ entity registers is
     Port(
         clk         :   in std_logic ;
         reset       :   in std_logic ;
-        reg_write   :   in std_logic ;                      -- Permitir escribir en un registro
+        reg_write   :   in std_logic ; 
         
-        rs1_addr    :   in std_logic_vector (2 downto 0);   -- direccion del primer registro fuente
-        rs2_addr    :   in std_logic_vector (2 downto 0);   -- direccion del segundo registro fuente
-        rd_addr     :   in std_logic_vector (2 downto 0);   -- direccion del registro destino
+        rs1_addr    :   in std_logic_vector (2 downto 0); 
+        rs2_addr    :   in std_logic_vector (2 downto 0); 
+        rd_addr     :   in std_logic_vector (2 downto 0);  
         
-        write_data  :   in std_logic_vector (15 downto 0);   -- datos de entrada para escribir en el registro
-        rs1_data    :   out std_logic_vector (15 downto 0);   -- datos de salida del primer  registro fuente
-        rs2_data    :   out std_logic_vector (15 downto 0)    -- datos de salida del segundo registro fuente
+        write_data  :   in std_logic_vector (15 downto 0);   
+        rs1_data    :   out std_logic_vector (15 downto 0);  
+        rs2_data    :   out std_logic_vector (15 downto 0)  
         
     );
 end registers;
@@ -53,7 +53,6 @@ architecture Behavioral of registers is
     signal regs : reg_array := (others => x"0000");
 begin
 
-    -- PROCESO SÍNCRONO: Escritura
     process(clk)
     begin
         if rising_edge(clk) then
@@ -65,9 +64,7 @@ begin
         end if;
     end process;
 
-    -- LECTURA ASÍNCRONA CON BYPASS (Forwarding Interno)
-    -- Si estamos leyendo el mismo registro que estamos escribiendo (y no es r0), 
-    -- sacamos el write_data directamente. Si no, leemos la memoria normal.
+    -- forwarding y lectura
     rs1_data <= write_data when (reg_write = '1' and rd_addr = rs1_addr and rd_addr /= "000") else 
                 regs(to_integer(unsigned(rs1_addr)));
                 

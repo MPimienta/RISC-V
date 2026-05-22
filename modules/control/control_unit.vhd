@@ -66,7 +66,7 @@ begin
                     when "100" => alu_sel <= "100"; -- SLL
                     when "101" => alu_sel <= "101"; -- SLT
                     when "110" => alu_sel <= "110"; -- XOR
-                    when others => alu_sel <= "111"; 
+                    when others => alu_sel <= "111"; -- NOP
                 end case;
                 
             when "0001" => -- LW

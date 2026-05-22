@@ -41,9 +41,7 @@ end rom_instructions;
 
 architecture DataFlow of rom_instructions is
 
-    type instruction_array is array (0 to 2047) of STD_LOGIC_VECTOR(15 downto 0); -- 256 espacios de 8 bits
-    
-    -- De momento se deja hardcodeado, pero hay que investigar cómo cargar un programa en memoria.
+    type instruction_array is array (0 to 2047) of STD_LOGIC_VECTOR(15 downto 0); 
 constant rom_memory : instruction_array := (
         
 0 => x"47F0",

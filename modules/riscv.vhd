@@ -151,13 +151,10 @@ architecture Structural of riscv is
 
 begin
 
-    -- =========================================================
-    -- ASIGNACIÓN DE PUERTOS DE SALIDA EXTERNOS
-    -- =========================================================
-    inst_addr <= if_pc_current;   -- El PC sale a la ROM
-    data_addr <= ex_mem_alu_res;  -- La dirección calculada sale a RAM/MMIO
-    data_out  <= ex_mem_rs2_data; -- El dato a guardar (Store) sale a RAM/MMIO
-    write_en  <= ex_mem_mem_write;-- La orden de escritura sale al Decodificador
+    inst_addr <= if_pc_current; 
+    data_addr <= ex_mem_alu_res; 
+    data_out  <= ex_mem_rs2_data; 
+    write_en  <= ex_mem_mem_write;
 
 
     -- =========================================================
@@ -172,7 +169,7 @@ begin
 
     reg_if_id: if_id_register port map (
         clk => clk, reset => reset, en => hz_if_id_en, flush => hz_if_id_flush,
-        pc_in => if_pc_current, instruction_in => instruction, -- Entrada desde el puerto 'instruction'
+        pc_in => if_pc_current, instruction_in => instruction,
         pc_out => if_id_pc, instruction_out => if_id_inst
     );
 
@@ -182,9 +179,9 @@ begin
     id_rs1_addr <= if_id_inst(8 downto 6);
     id_rd_addr  <= if_id_inst(11 downto 9);
 
-    id_rs2_addr <= if_id_inst(11 downto 9) when if_id_inst(15 downto 12) = "0010" or -- SW
-                                                if_id_inst(15 downto 12) = "0101" or -- BEQ
-                                                if_id_inst(15 downto 12) = "0110"    -- BNE
+    id_rs2_addr <= if_id_inst(11 downto 9) when if_id_inst(15 downto 12) = "0010" or 
+                                                if_id_inst(15 downto 12) = "0101" or 
+                                                if_id_inst(15 downto 12) = "0110" 
                    else if_id_inst(5 downto 3);
 
     inst_Regs: registers port map (
@@ -284,7 +281,7 @@ begin
     reg_mem_wb: mem_wb_register port map (
         clk => clk, reset => reset, en => '1', flush => '0',
         alu_result_in => ex_mem_alu_res, 
-        ram_data_in => data_in, -- Entrada desde el puerto exterior (Decoder/RAM)
+        ram_data_in => data_in, 
         rd_addr_in => ex_mem_rd_addr,
         ctrl_reg_write_in => ex_mem_reg_write, ctrl_mem_to_reg_in => ex_mem_mem_to_reg,
         alu_result_out => mem_wb_alu_res, ram_data_out => mem_wb_ram_data,

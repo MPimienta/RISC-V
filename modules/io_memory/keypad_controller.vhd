@@ -42,9 +42,12 @@ entity keypad_controller is
 end keypad_controller;
 
 architecture Behavioral of keypad_controller is
-
+    -- comentar para simulación
     --constant PRESCALER_MAX : integer := 100000;
+    
+    -- comentar para implementación
     constant PRESCALER_MAX : integer := 10;
+    
     signal prescaler : integer range 0 to PRESCALER_MAX := 0;
     signal scan_tick : std_logic := '0';
 
