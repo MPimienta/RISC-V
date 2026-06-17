@@ -1,10 +1,10 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
-entity tb_riscv_oled is
-end tb_riscv_oled;
+entity tb_keypad_test is
+end tb_keypad_test;
 
-architecture behavior of tb_riscv_oled is
+architecture behavior of tb_keypad_test is
 
     component riscv
         Port ( 
@@ -19,7 +19,7 @@ architecture behavior of tb_riscv_oled is
             keypad_col : in std_logic_vector(3 downto 0);
             keypad_row : out std_logic_vector(3 downto 0);
             
-            -- NUEVOS PINES OLED SPI
+            -- PINES OLED (Los dejamos conectados para que compile, aunque no los miremos hoy)
             oled_cs    : out std_logic;
             oled_sdin  : out std_logic;
             oled_sclk  : out std_logic;
@@ -44,20 +44,17 @@ architecture behavior of tb_riscv_oled is
     signal an         : std_logic_vector (3 downto 0);
     signal keypad_row : std_logic_vector(3 downto 0);
     
-    -- Señales de la OLED
-    signal oled_cs    : std_logic;
-    signal oled_sdin  : std_logic;
-    signal oled_sclk  : std_logic;
-    signal oled_dc    : std_logic;
-    signal oled_res   : std_logic;
-    signal oled_vbat  : std_logic;
-    signal oled_vdd   : std_logic;
+    -- Señales OLED (Dummies)
+    signal oled_cs, oled_sdin, oled_sclk, oled_dc, oled_res, oled_vbat, oled_vdd : std_logic;
 
-    constant clk_period : time := 10 ns; -- Reloj de alta frecuencia (100 MHz)
+    constant clk_period : time := 10 ns; -- Reloj de 100 MHz
+
+    -- Señales para "engañar" al controlador matricial
+    signal sim_key_row : std_logic_vector(3 downto 0) := "1111";
+    signal sim_key_col : std_logic_vector(3 downto 0) := "1111";
 
 begin
 
-    -- Instanciación del Top Level (RISC-V)
     uut: riscv Port map (
         btn_clk    => btn_clk, 
         clk        => clk, 
@@ -78,46 +75,61 @@ begin
         oled_vdd   => oled_vdd
     );
 
-    -- Generador de Reloj del Sistema (100 MHz)
-    -- Este reloj alimenta la lógica SPI y los debouncers
+    -- Generador de Reloj del Sistema
     clk_process :process
     begin
         clk <= '0'; wait for clk_period/2;
         clk <= '1'; wait for clk_period/2;
     end process;
     
-    -- Generador de Reloj de la CPU (Pipeline)
-    -- En hardware real, esto vendría de un botón, pero en simulación
-    -- lo automatizamos para que la CPU corra instrucciones sin parar.
-    btn_clk_process :process
-    begin
-        btn_clk <= '0'; wait for 50 ns;
-        btn_clk <= '1'; wait for 50 ns;
-    end process;
+    -- LÓGICA DEL TECLADO MATRICIAL (Espejo de la realidad)
+    -- Si la fila que está escaneando la FPGA coincide con la tecla que queremos pulsar, 
+    -- bajamos la columna correspondiente a '0'. Si no, la dejamos en '1' (alta impedancia virtual).
+    keypad_col <= sim_key_col when (keypad_row = sim_key_row) else "1111";
 
     stim_proc: process
     begin
-        -- 1. Reset inicial
+        -- 1. Reset
         btn_reset <= '1';
         wait for 200 ns;
         btn_reset <= '0';
         
+        -- Esperamos un poco para que el controlador del teclado arranque
+        wait for 5 us; 
+
         -- =========================================================================
-        -- ¡TRUCO DE SIMULACIÓN!
-        -- El programa en ROM tiene un bucle de retardo anidado muy largo (instrucciones 3 a 8).
-        -- Para que no tengas que esperar horas de simulación a que pase ese bucle:
-        -- VE A TU ARCHIVO 'rom_instructions.vhd' y cambia temporalmente:
-        -- 3  => x"42FF", -- LI r1, 255   ---> POR --->  3  => x"4202", -- LI r1, 2
-        -- 4  => x"44FF", -- LI r2, 255   ---> POR --->  4  => x"4402", -- LI r2, 2
-        -- Así el bucle pasará casi al instante y verás las transmisiones SPI rápido.
+        -- PRUEBA 1: Pulsar la tecla '3' (Hex: 0x3)
         -- =========================================================================
+        -- Fila 0 ("1110"), Columna 2 ("1011")
+        sim_key_row <= "1110"; sim_key_col <= "1011";
+        wait for 15 us; -- Mantener pulsado (Debe dar tiempo al prescaler a hacer varios escaneos)
         
-        -- Dejamos que la CPU ejecute el código de la ROM durante un buen rato.
-        -- Ajusta este tiempo si ves que la simulación se detiene antes de enviar "Hola".
-        wait for 1000 us; 
+        -- Soltar la tecla
+        sim_key_row <= "1111"; sim_key_col <= "1111"; 
+        wait for 10 us; 
         
-        -- Fin de simulación
-        assert false report "Simulación Terminada Exitosamente" severity failure;
+        -- =========================================================================
+        -- PRUEBA 2: Pulsar la tecla 'A' (Hex: 0xA)
+        -- =========================================================================
+        -- Fila 0 ("1110"), Columna 3 ("0111")
+        sim_key_row <= "1110"; sim_key_col <= "0111";
+        wait for 15 us; 
+        
+        -- Soltar la tecla
+        sim_key_row <= "1111"; sim_key_col <= "1111"; 
+        wait for 10 us;
+
+        -- =========================================================================
+        -- PRUEBA 3: Pulsar la tecla 'F' / Almohadilla (Hex: 0xF)
+        -- =========================================================================
+        -- Fila 3 ("0111"), Columna 2 ("1011")
+        sim_key_row <= "0111"; sim_key_col <= "1011";
+        wait for 15 us;
+        
+        sim_key_row <= "1111"; sim_key_col <= "1111"; 
+        wait for 20 us;
+
+        assert false report "Test de Teclado Finalizado" severity failure;
         wait;
     end process;
 end behavior;

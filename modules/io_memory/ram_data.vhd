@@ -43,7 +43,7 @@ end ram_data;
 
 architecture Behavioral of ram_data is
 
-    type ram_array is array (0 to 127) of STD_LOGIC_VECTOR(15 downto 0);
+    type ram_array is array (0 to 1023) of STD_LOGIC_VECTOR(15 downto 0);
     
     signal ram : ram_array := (others => x"0000");
 
@@ -53,12 +53,12 @@ begin
     begin 
         if rising_edge(clk) then
             if write_en = '1' then
-                ram(to_integer(unsigned(data_addr(6 downto 0)))) <= data_in;
+                ram(to_integer(unsigned(data_addr(9 downto 0)))) <= data_in;
             end if;
         end if;
     end process;
     
-    data_out <= ram(to_integer(unsigned(data_addr(6 downto 0))));
+    data_out <= ram(to_integer(unsigned(data_addr(9 downto 0))));
 
 
 end Behavioral;

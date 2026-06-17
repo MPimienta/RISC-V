@@ -27,8 +27,7 @@ entity program_counter is
     Port (
         clk      : in  std_logic;
         reset    : in  std_logic;
-        pc_en    : in  std_logic;                    -- Solo avanza cuando la UC lo pide
-        load     : in  std_logic;                    -- Para saltos BEQ/JAL 
+        pc_en    : in  std_logic;
         d_in     : in  std_logic_vector(15 downto 0); 
         pc_out   : out std_logic_vector(15 downto 0)
     );
@@ -43,11 +42,7 @@ begin
             pc_reg <= (others => '0');
         elsif rising_edge(clk) then
             if pc_en = '1' then
-                if load = '1' then
-                    pc_reg <= unsigned(d_in);
-                else
-                    pc_reg <= pc_reg + 1;
-                end if;
+                pc_reg <= unsigned(d_in);
             end if;
         end if;
     end process;

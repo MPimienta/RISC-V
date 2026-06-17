@@ -9,7 +9,6 @@ entity forwarding_unit is
         reg_write_mem   : in std_logic;
         rd_addr_wb      : in std_logic_vector (2 downto 0);
         reg_write_wb    : in std_logic;
-        -- Controles para los Multiplexores de la ALU (00=Normal, 10=MEM, 01=WB)
         forward_a       : out std_logic_vector (1 downto 0);
         forward_b       : out std_logic_vector (1 downto 0)
     );
@@ -23,9 +22,9 @@ begin
         forward_b <= "00";
 
         if (reg_write_mem = '1' and rd_addr_mem /= "000" and rd_addr_mem = rs1_addr_ex) then
-            forward_a <= "10"; -- Cortocircuito desde la etapa MEM
+            forward_a <= "10"; 
         elsif (reg_write_wb = '1' and rd_addr_wb /= "000" and rd_addr_wb = rs1_addr_ex) then
-            forward_a <= "01"; -- Cortocircuito desde la etapa WB
+            forward_a <= "01"; 
         end if;
 
         if (reg_write_mem = '1' and rd_addr_mem /= "000" and rd_addr_mem = rs2_addr_ex) then

@@ -35,8 +35,8 @@ entity if_id_register is
     Port ( 
         clk                 : in std_logic;
         reset               : in std_logic;
-        en                  : in std_logic; -- Manejar Data Hazard, da tiempo a instrucciones de memoria para guardar el dato
-        flush               : in std_logic; -- Manejar Control Hazard, vaciar en caso de salto
+        en                  : in std_logic;
+        flush               : in std_logic;
         pc_in               : in std_logic_vector (15 downto 0);
         instruction_in      : in std_logic_vector (15 downto 0);
         

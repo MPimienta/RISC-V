@@ -6,7 +6,6 @@ Port (
 clk     : in std_logic ;
 reset   : in std_logic ;
 flush   : in std_logic ; -- Usado por la Hazard Unit para "limpiar" instrucciones
-en      : in std_logic ;
 
     -- Datos de entrada
     pc_in       : in std_logic_vector (15 downto 0);
@@ -58,17 +57,16 @@ end id_ex_register;
 
 architecture Behavioral of id_ex_register is
 begin
-process(clk, reset)
-begin
-if (reset = '1') then
--- Reset asíncrono de todos los registros internos
-pc_out <= (others => '0');
-rs1_data_out <= (others => '0');
-rs2_data_out <= (others => '0');
-imm_out <= (others => '0');
-rs1_addr_out <= (others => '0');
-rs2_addr_out <= (others => '0');
-rd_addr_out <= (others => '0');
+    process(clk, reset)
+    begin
+        if (reset = '1') then
+        pc_out <= (others => '0');
+        rs1_data_out <= (others => '0');
+        rs2_data_out <= (others => '0');
+        imm_out <= (others => '0');
+        rs1_addr_out <= (others => '0');
+        rs2_addr_out <= (others => '0');
+        rd_addr_out <= (others => '0');
 
         ctrl_alu_sel_out <= (others => '0');
         ctrl_alu_src_b_out <= '0';
@@ -83,7 +81,6 @@ rd_addr_out <= (others => '0');
         
     elsif rising_edge(clk) then
         if (flush = '1') then
-            -- Flush: Se inyecta una "burbuja" (instrucción NOP) limpiando el control
             pc_out <= (others => '0');
             rs1_data_out <= (others => '0');
             rs2_data_out <= (others => '0');
@@ -103,8 +100,7 @@ rd_addr_out <= (others => '0');
             ctrl_jump_jal_out <= '0';
             ctrl_jump_jalr_out <= '0';
 
-        elsif (en = '1') then
-            -- Funcionamiento normal: Propagación de datos y control
+        else
             pc_out <= pc_in;
             rs1_data_out <= rs1_data_in;
             rs2_data_out <= rs2_data_in;

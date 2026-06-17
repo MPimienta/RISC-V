@@ -1,16 +1,22 @@
-0  => x"46E2", -- LI r3, 226      (NUEVA Dir. Teclado: 0xE2)
-1  => x"48F0", -- LI r4, 240      (NUEVA Dir. LEDs: 0xF0)
-2  => x"4E10", -- LI r7, 16       (Mascara Valid Bit)
-3  => x"1AC0", -- LW r5, r3, 0    (Leer Teclado)
-4  => x"0D7A", -- AND r6, r5, r7  (Aislar Valid)
-5  => x"5C3D", -- BEQ r6, r0, -3  (Loop si no hay pulsacion)
-6  => x"4E0F", -- LI r7, 15       (Mascara Data)
-7  => x"0D7A", -- AND r6, r5, r7  (Extraer Tecla)
-8  => x"2D00", -- SW r6, r4, 0    (Escribir tecla en LEDs)
-9  => x"4E10", -- LI r7, 16       (Mascara Valid Bit)
-10 => x"1AC0", -- LW r5, r3, 0    (Leer Teclado otra vez)
-11 => x"0D7A", -- AND r6, r5, r7  (Aislar Valid)
-12 => x"6C3D", -- BNE r6, r0, -3  (Loop mientras siga pulsado)
-13 => x"5035", -- BEQ r0, r0, -11 (Volver al inicio)
-14 => x"0000", -- NOP
-15 => x"0000",  -- NOP
+-- ==========================================
+        -- INICIALIZACIÓN DE MÁSCARAS
+        -- ==========================================
+        0 => x"4A10", -- LI r5, 16  (Binario: 00010000 -> Máscara para leer el bit 4 'key_valid')
+        1 => x"4C0F", -- LI r6, 15  (Binario: 00001111 -> Máscara para leer los bits 0-3 'key_value')
+
+        -- ==========================================
+        -- BUCLE PRINCIPAL (POLLING DEL TECLADO)
+        -- ==========================================
+        -- Leer el valor del periférico
+        2 => x"1222", -- LW r1, r0, -30  (0xFFE2 = -30. Carga el estado del teclado en r1)
+        
+        -- Comprobar si hay una tecla pulsada
+        3 => x"046A", -- AND r2, r1, r5  (Aisla el bit 4 guardándolo en r2. Si no hay tecla, r2 será 0)
+        4 => x"543E", -- BEQ r2, r0, -2  (Si r2 es 0, salta -2 instrucciones atrás -> Vuelve a la inst 2)
+        
+        -- Si llegamos aquí, ES PORQUE SE ESTÁ PULSANDO UNA TECLA
+        5 => x"0672", -- AND r3, r1, r6  (Aisla el valor de la tecla 0-15 y lo guarda en r3)
+        6 => x"2630", -- SW r3, r0, -16  (0xFFF0 = -16. Escribe el valor de r3 en los LEDs)
+        
+        -- Volver a leer para el siguiente ciclo
+        7 => x"503B", -- BEQ r0, r0, -5  (Salto incondicional: r0 siempre es igual a r0. Salta a la inst 2)
