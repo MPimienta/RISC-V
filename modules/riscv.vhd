@@ -74,7 +74,7 @@ architecture Structural of riscv is
     end component;
 
     component id_ex_register is
-        Port ( clk, reset, flush, en : in std_logic;
+        Port ( clk, reset, flush : in std_logic;
                pc_in, rs1_data_in, rs2_data_in, imm_in : in std_logic_vector (15 downto 0);
                rs1_addr_in, rs2_addr_in, rd_addr_in : in std_logic_vector (2 downto 0);
                ctrl_alu_sel_in : in std_logic_vector (2 downto 0);
@@ -211,7 +211,7 @@ begin
     );
 
     reg_id_ex: id_ex_register port map (
-        clk => clk, reset => reset, en => '1', flush => hz_id_ex_flush,
+        clk => clk, reset => reset, flush => hz_id_ex_flush,
         pc_in => if_id_pc, rs1_data_in => id_rs1_data, rs2_data_in => id_rs2_data, imm_in => id_imm_ext,
         rs1_addr_in => id_rs1_addr, rs2_addr_in => id_rs2_addr, rd_addr_in => id_rd_addr,
         ctrl_alu_sel_in => ctrl_alu_sel, ctrl_alu_src_b_in => ctrl_alu_src_b,
