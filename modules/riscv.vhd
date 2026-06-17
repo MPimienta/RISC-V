@@ -48,7 +48,7 @@ architecture Structural of riscv is
     end component;
 
     component program_counter is
-        Port ( clk, reset, pc_en, load : in std_logic;                    
+        Port ( clk, reset, pc_en : in std_logic;                    
                d_in : in std_logic_vector(15 downto 0); 
                pc_out : out std_logic_vector(15 downto 0));
     end component;
@@ -164,7 +164,7 @@ begin
 
     inst_PC: program_counter port map (
         clk => clk, reset => reset, pc_en => hz_pc_en, 
-        load => '1', d_in => if_pc_next, pc_out => if_pc_current
+        d_in => if_pc_next, pc_out => if_pc_current
     );
 
     reg_if_id: if_id_register port map (
