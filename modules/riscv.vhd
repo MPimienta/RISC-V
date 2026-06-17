@@ -98,7 +98,7 @@ architecture Structural of riscv is
     end component;
 
     component mem_wb_register is
-        Port ( clk, en, flush, reset : in std_logic;
+        Port ( clk, reset : in std_logic;
                alu_result_in, ram_data_in : in std_logic_vector (15 downto 0);
                rd_addr_in : in std_logic_vector (2 downto 0);
                ctrl_reg_write_in, ctrl_mem_to_reg_in : in std_logic;
@@ -279,7 +279,7 @@ begin
     -- =========================================================
     
     reg_mem_wb: mem_wb_register port map (
-        clk => clk, reset => reset, en => '1', flush => '0',
+        clk => clk, reset => reset,
         alu_result_in => ex_mem_alu_res, 
         ram_data_in => data_in, 
         rd_addr_in => ex_mem_rd_addr,

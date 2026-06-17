@@ -34,8 +34,6 @@ use IEEE.STD_LOGIC_1164.ALL;
 entity mem_wb_register is
     Port ( 
         clk                 : in std_logic ;
-        en                  : in std_logic ;
-        flush               : in std_logic ;
         reset               : in std_logic ;
         
         alu_result_in       : in std_logic_vector (15 downto 0);
@@ -66,20 +64,11 @@ begin
             ctrl_mem_to_reg_out <= '0';
             
         elsif rising_edge(clk) then
-            if (flush = '1') then
-                alu_result_out <= (others => '0');
-                ram_data_out <= (others => '0');
-                rd_addr_out <= (others => '0');
-                ctrl_reg_write_out <= '0';
-                ctrl_mem_to_reg_out <= '0';
-                
-            elsif (en = '1') then
-                alu_result_out <= alu_result_in;
-                ram_data_out <= ram_data_in;
-                rd_addr_out <= rd_addr_in;
-                ctrl_reg_write_out <= ctrl_reg_write_in;
-                ctrl_mem_to_reg_out <= ctrl_mem_to_reg_in;
-            end if;
+            alu_result_out <= alu_result_in;
+            ram_data_out <= ram_data_in;
+            rd_addr_out <= rd_addr_in;
+            ctrl_reg_write_out <= ctrl_reg_write_in;
+            ctrl_mem_to_reg_out <= ctrl_mem_to_reg_in;
         end if;
     end process;
 end Behavioral;
