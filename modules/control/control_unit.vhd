@@ -28,6 +28,7 @@ entity control_unit is
         opcode      : in std_logic_vector(3 downto 0);
         funct       : in std_logic_vector(2 downto 0);
         alu_sel     : out std_logic_vector(2 downto 0);
+        --señales que se transmiten a las siguientes etapas del pipeline
         alu_src_b   : out std_logic;
         mem_write   : out std_logic;
         reg_write   : out std_logic;
