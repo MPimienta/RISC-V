@@ -42,26 +42,35 @@ end rom_instructions;
 architecture DataFlow of rom_instructions is
 
     type instruction_array is array (0 to 2047) of STD_LOGIC_VECTOR(15 downto 0); 
-constant rom_memory : instruction_array := (
+    constant rom_memory : instruction_array := (
         
-0 => x"47F0",
-1 => x"4405",
-2 => x"0000",
-3 => x"0000",
-4 => x"24C0",
+0 => x"420F",
+1 => x"4403",
+2 => x"0650",
+3 => x"08D1",
+4 => x"0B0A",
 5 => x"0000",
-6 => x"0000",
-7 => x"0000",
-8 => x"0490",
-9 => x"0000",
-10 => x"0000",
-11 => x"0000",
-12 => x"71F8",
-13 => x"0000",
+6 => x"0D53",
+7 => x"4E32",
+8 => x"2DC0",
+9 => x"13C0",
+10 => x"0466",
+11 => x"3281",
+12 => x"064C",
+13 => x"085D",
+14 => x"6886",
+15 => x"0000",
+16 => x"427C",
+17 => x"4A03",
+18 => x"026C",
+19 => x"3247",
+20 => x"4A14",
+21 => x"8140",
 others => x"0000"
 
 
-);
+
+    );
 begin
 
     instruction_out <= rom_memory(to_integer(unsigned(instruction_addr)));

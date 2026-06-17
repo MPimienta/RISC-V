@@ -3,55 +3,30 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
 entity tb_top_level is
--- Un testbench no tiene puertos
+-- Sin puertos, es un testbench
 end tb_top_level;
 
-architecture Behavioral of tb_top_level is
+architecture sim of tb_top_level is
 
-    -- ==========================================
-    -- DECLARACIÓN DEL COMPONENTE (Unit Under Test)
-    -- ==========================================
-    component top_level is
-        Port ( 
-            clk         : in std_logic;
-            btn_clk     : in std_logic;
-            btn_reset   : in std_logic;
-            btn_add     : in std_logic;
-            btn_sub     : in std_logic;
-            swt         : in std_logic_vector (15 downto 0);
-            led         : out std_logic_vector (15 downto 0);
-            seg         : out std_logic_vector (6 downto 0);
-            dp          : out std_logic;
-            an          : out std_logic_vector (3 downto 0);
-            keypad_col  : in std_logic_vector(3 downto 0);
-            keypad_row  : out std_logic_vector(3 downto 0);
-            oled_cs     : out std_logic;
-            oled_sdin   : out std_logic;
-            oled_sclk   : out std_logic;
-            oled_dc     : out std_logic;
-            oled_res    : out std_logic;
-            oled_vbat   : out std_logic;
-            oled_vdd    : out std_logic
-        );
-    end component;
+    -- Definición del reloj principal (100 MHz)
+    constant CLK_PERIOD : time := 10 ns;
 
-    -- ==========================================
-    -- SEÑALES INTERNAS PARA EL TESTBENCH
-    -- ==========================================
+    -- Señales de entrada
     signal clk         : std_logic := '0';
     signal btn_clk     : std_logic := '0';
-    signal btn_reset   : std_logic := '0';
+    signal btn_reset   : std_logic := '1';
     signal btn_add     : std_logic := '0';
     signal btn_sub     : std_logic := '0';
     signal swt         : std_logic_vector(15 downto 0) := (others => '0');
-    
-    signal keypad_col  : std_logic_vector(3 downto 0);
-    signal keypad_row  : std_logic_vector(3 downto 0);
+    signal keypad_col  : std_logic_vector(3 downto 0)  := (others => '0');
 
+    -- Señales de salida
     signal led         : std_logic_vector(15 downto 0);
     signal seg         : std_logic_vector(6 downto 0);
     signal dp          : std_logic;
     signal an          : std_logic_vector(3 downto 0);
+    signal keypad_row  : std_logic_vector(3 downto 0);
+    
     signal oled_cs     : std_logic;
     signal oled_sdin   : std_logic;
     signal oled_sclk   : std_logic;
@@ -60,18 +35,11 @@ architecture Behavioral of tb_top_level is
     signal oled_vbat   : std_logic;
     signal oled_vdd    : std_logic;
 
-    constant clk_period : time := 100 ns; -- 10 MHz
-
-    -- SEÑALES PARA EMULAR EL DEDO DEL USUARIO
-    signal sim_row : integer := -1;
-    signal sim_col : integer := -1;
-
 begin
 
-    -- ==========================================
-    -- INSTANCIACIÓN DEL TOP LEVEL (UUT)
-    -- ==========================================
-    UUT: top_level Port map (
+    -- Instanciación de tu módulo principal
+    uut: entity work.top_level
+    port map (
         clk         => clk,
         btn_clk     => btn_clk,
         btn_reset   => btn_reset,
@@ -93,85 +61,58 @@ begin
         oled_vdd    => oled_vdd
     );
 
-    -- ==========================================
-    -- EMULADOR FÍSICO DEL TECLADO MATRICIAL (Circuito Concurrente)
-    -- Esto actúa como los contactos metálicos de los botones
-    -- ==========================================
-    process(keypad_row, sim_row, sim_col)
-    begin
-        keypad_col <= "1111"; -- Por defecto, los Pull-ups tiran a '1'
-        if sim_row /= -1 and sim_col /= -1 then
-            -- Si hay un dedo puesto, la columna copia EXACTAMENTE 
-            -- lo que haga la fila en tiempo real
-            keypad_col(sim_col) <= keypad_row(sim_row);
-        end if;
-    end process;
-
-    -- ==========================================
-    -- PROCESO DE GENERACIÓN DE RELOJ
-    -- ==========================================
+    -- Generador del reloj principal
     clk_process : process
     begin
         clk <= '0';
-        wait for clk_period/2;
+        wait for CLK_PERIOD / 2;
         clk <= '1';
-        wait for clk_period/2;
+        wait for CLK_PERIOD / 2;
     end process;
 
-    -- ==========================================
-    -- PROCESO DE ESTÍMULOS PRINCIPAL
-    -- ==========================================
-    -- ==========================================
-    -- PROCESO DE ESTÍMULOS PRINCIPAL
-    -- ==========================================
-    stim_proc: process
-    begin		
+    -- Proceso de estímulos (Simulación de la interacción humana)
+    stimulus_process: process
+    begin
+        -- Estado inicial: Mantenemos el reset activo un momento
         btn_reset <= '1';
-        sim_row <= -1; sim_col <= -1; 
-        wait for clk_period * 10; 
+        btn_clk   <= '0';
+        btn_add   <= '0';
+        btn_sub   <= '0';
+        swt       <= x"0000";
+        keypad_col <= "0000";
+        wait for 50 ns;
         
+        -- Liberamos el reset para que el procesador arranque
         btn_reset <= '0';
-        wait for 3 us; 
+        wait for 200 ns;
+
+        -- Simulamos la configuración de unos valores en los interruptores (Switches)
+        swt <= x"0015"; -- Equivale a 21 en decimal
+        wait for 100 ns;
+
+        -- Simulamos que el usuario presiona el botón "Add" durante unos ciclos
+        btn_add <= '1';
+        wait for 50 ns;
+        btn_add <= '0'; -- Soltamos el botón
         
-        -- ====================================================
-        -- 1. INTENTO FALLIDO: Metemos '8', '8', '8', '8'
-        -- Al cuarto '8', la CPU lo evaluará, fallará y reseteará la RAM.
-        -- ====================================================
-        --for i in 0 to 3 loop
-        --    sim_row <= 2; sim_col <= 1; -- Tecla '8'
-        --    wait for 100 us; 
-        --    sim_row <= -1; sim_col <= -1; -- Soltar
-        --    wait for 50 us; 
-        --end loop;
+        -- Damos tiempo para que el procesador ejecute sus instrucciones de lectura,
+        -- haga el cálculo en la ALU y envíe el resultado al display y los LEDs.
+        wait for 1500 ns; 
+
+        -- Simulamos el uso de otro periférico (Switches distintos y botón Sub)
+        swt <= x"00A0"; -- Equivale a 160 en decimal
+        wait for 100 ns;
         
-        -- Damos un poquito de margen para que la CPU haga la comprobación y el reset
-        wait for 20 us;
-
-        -- ====================================================
-        -- 2. INTENTO CORRECTO: '1' -> '2' -> '3' -> '4'
-        -- ====================================================
-        -- Tecla '1'
-        sim_row <= 0; sim_col <= 0; wait for 1 ms; 
-        sim_row <= -1; sim_col <= -1; wait for 1 ms;
-
-        -- Tecla '2'
-        sim_row <= 0; sim_col <= 1; wait for 1 ms; 
-        sim_row <= -1; sim_col <= -1; wait for 1 ms;
-
-        -- Tecla '3'
-        sim_row <= 0; sim_col <= 2; wait for 1 ms; 
-        sim_row <= -1; sim_col <= -1; wait for 1 ms;
-
-        -- Tecla '4'
-        sim_row <= 1; sim_col <= 0; wait for 1 ms; 
-        sim_row <= -1; sim_col <= -1; wait for 1 ms;
+        btn_sub <= '1';
+        wait for 50 ns;
+        btn_sub <= '0';
         
-        -- ====================================================
-        -- ¡AHORA SÍ! Aquí la señal `led` pasará a x"00FF"
-        -- ====================================================
+        -- Damos un tiempo de espera largo para observar la transmisión del OLED
+        -- y el multiplexado rápido de los ánodos (señal 'an') del display 7 segmentos.
+        wait for 5000 ns;
+
+        -- Fin de la simulación
         wait;
     end process;
 
-
-
-end Behavioral;
+end sim;
