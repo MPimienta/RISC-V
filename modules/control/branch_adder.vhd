@@ -40,6 +40,6 @@ end branch_adder;
 architecture Behavioral of branch_adder is
 begin
 
-    target_out <= std_logic_vector(unsigned(pc_in) + unsigned(imm_in));
+    target_out <= std_logic_vector(unsigned(pc_in) + unsigned(imm_in)); -- Sumador paralelo para calculo de un salto
 
 end Behavioral;

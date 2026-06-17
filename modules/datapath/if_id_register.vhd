@@ -55,10 +55,10 @@ begin
             instruction_out <= (others => '0');
             pc_out <= (others => '0');
         elsif rising_edge(clk) then
-            if (flush = '1') then
+            if (flush = '1') then -- Control para saltos
                 instruction_out <= (others => '0');
                 pc_out <= (others => '0');
-            elsif (en = '1') then
+            elsif (en = '1') then -- Control para evitar riegos de datos
                 pc_out <= pc_in;
                 instruction_out <= instruction_in;
             end if;

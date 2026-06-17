@@ -18,19 +18,19 @@ architecture Behavioral of forwarding_unit is
 begin
     process(rs1_addr_ex, rs2_addr_ex, rd_addr_mem, reg_write_mem, rd_addr_wb, reg_write_wb)
     begin
-        forward_a <= "00";
+        forward_a <= "00"; -- Caso normal desde el banco
         forward_b <= "00";
 
         if (reg_write_mem = '1' and rd_addr_mem /= "000" and rd_addr_mem = rs1_addr_ex) then
-            forward_a <= "10"; 
+            forward_a <= "10"; -- El dato viene de la etapa de memoria
         elsif (reg_write_wb = '1' and rd_addr_wb /= "000" and rd_addr_wb = rs1_addr_ex) then
-            forward_a <= "01"; 
+            forward_a <= "01"; -- El dato viene desde la etapa de WB
         end if;
 
         if (reg_write_mem = '1' and rd_addr_mem /= "000" and rd_addr_mem = rs2_addr_ex) then
             forward_b <= "10";
         elsif (reg_write_wb = '1' and rd_addr_wb /= "000" and rd_addr_wb = rs2_addr_ex) then
-            forward_b <= "01";
+            forward_b <= "01"; 
         end if;
     end process;
 end Behavioral;

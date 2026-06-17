@@ -23,7 +23,7 @@ begin
         if_id_en    <= '1';
         if_id_flush <= '0';
         id_ex_flush <= '0';
-        if (branch_taken = '1') then
+        if (branch_taken = '1') then -- Flag de salto
             if_id_flush <= '1';
             id_ex_flush <= '1';
             
