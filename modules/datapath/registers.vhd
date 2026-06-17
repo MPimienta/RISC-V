@@ -65,6 +65,7 @@ begin
     end process;
 
     -- forwarding y lectura
+    -- cuando uno de los registros de salida coincide con el de destino (WB-ID) 
     rs1_data <= write_data when (reg_write = '1' and rd_addr = rs1_addr and rd_addr /= "000") else 
                 regs(to_integer(unsigned(rs1_addr)));
                 
