@@ -28,16 +28,16 @@ architecture Behavioral of oled_spi_mmio is
     signal state : state_type := IDLE;
     
     signal shift_reg   : std_logic_vector(7 downto 0) := (others => '0');
-    signal bit_counter : integer range 0 to 7 := 0;
+    signal bit_counter : integer range 0 to 7 := 0; -- Contador de bits para la escritura
     constant MAX_COUNT : integer := 2; 
     signal clk_div     : integer range 0 to MAX_COUNT := 0;
     signal sclk_int    : std_logic := '0';
 
 begin
-
+    -- Asignacion de los pines
     oled_dc   <= ctrl_reg(0);
     oled_res  <= ctrl_reg(1);
-    oled_cs   <= ctrl_reg(2);
+    oled_cs   <= ctrl_reg(2); -- inactivo para la inicializacion para no captar ruido
     oled_vdd  <= ctrl_reg(3);
     oled_vbat <= ctrl_reg(4);
     
@@ -47,7 +47,7 @@ begin
     process(cpu_addr, status_busy)
     begin
         cpu_data_out <= '0';
-        if cpu_addr = x"FFF4" then
+        if cpu_addr = x"FFF4" then -- Registro del estado
             cpu_data_out <= status_busy;
         end if;
     end process;
@@ -63,9 +63,9 @@ begin
                 
             else
                 if cpu_we = '1' then
-                    if cpu_addr = x"FFF2" then
+                    if cpu_addr = x"FFF2" then -- Data or Command
                         ctrl_reg <= cpu_data_in(4 downto 0);
-                    elsif cpu_addr = x"FFF3" and status_busy = '0' then
+                    elsif cpu_addr = x"FFF3" and status_busy = '0' then -- Datos para escritura
                         shift_reg <= cpu_data_in(7 downto 0);
                         status_busy <= '1';
                         bit_counter <= 7;
@@ -81,16 +81,16 @@ begin
                         
                         case state is
                             when SHIFT_LOW =>
-                                sclk_int <= '1'; 
+                                sclk_int <= '1'; -- Pone a '1' sclk_int para escribir
                                 state <= SHIFT_HIGH;
                                 
                             when SHIFT_HIGH =>
                                 sclk_int <= '0';
-                                if bit_counter = 0 then
+                                if bit_counter = 0 then -- Comprobacion de si ha terminado el byte 
                                     status_busy <= '0'; 
                                     state <= IDLE;
                                 else
-                                    shift_reg <= shift_reg(6 downto 0) & '0'; 
+                                    shift_reg <= shift_reg(6 downto 0) & '0'; -- desplazamiento del registro    
                                     bit_counter <= bit_counter - 1;
                                     state <= SHIFT_LOW;
                                 end if;

@@ -43,17 +43,17 @@ end keypad_controller;
 
 architecture Behavioral of keypad_controller is
     -- comentar para simulación
-    --constant PRESCALER_MAX : integer := 100000;
+    --constant PRESCALER_MAX : integer := 100000; 
     
     -- comentar para implementación
     constant PRESCALER_MAX : integer := 10;
     
-    signal prescaler : integer range 0 to PRESCALER_MAX := 0;
-    signal scan_tick : std_logic := '0';
+    signal prescaler : integer range 0 to PRESCALER_MAX := 0; -- Filtro antirebotes
+    signal scan_tick : std_logic := '0'; -- '1' cuando prescaler se llena
 
-    signal scan_row : integer range 0 to 3 := 0;
+    signal scan_row : integer range 0 to 3 := 0; -- Indice de fila
     
-    signal key_value : std_logic_vector(3 downto 0) := "0000";
+    signal key_value : std_logic_vector(3 downto 0) := "0000"; -- Tecla pulsada 
     signal key_valid : std_logic := '0';
 
     signal current_row_val : std_logic_vector(3 downto 0) := "1110";
@@ -120,7 +120,7 @@ begin
                 else
                     key_valid <= '0';
                     
-                    if scan_row = 3 then
+                    if scan_row = 3 then 
                         scan_row <= 0;
                         current_row_val <= "1110";
                     else

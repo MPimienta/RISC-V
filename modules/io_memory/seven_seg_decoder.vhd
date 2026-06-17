@@ -44,7 +44,7 @@ end seven_seg_decoder;
 
 architecture Behavioral of seven_seg_decoder is
 
-    signal refresh_counter : unsigned(19 downto 0) := (others => '0');
+    signal refresh_counter : unsigned(19 downto 0) := (others => '0'); -- divisor para multiplexacion de displays
     signal led_activating_counter : std_logic_vector(1 downto 0);
     signal current_digit : std_logic_vector(3 downto 0);
 
@@ -69,16 +69,16 @@ process(led_activating_counter, data_in)
     begin
         case led_activating_counter is
             when "00" =>
-                an <= "0111"; 
+                an <= "0111"; -- display 3
                 current_digit <= data_in(15 downto 12);
             when "01" =>
-                an <= "1011"; 
+                an <= "1011"; -- display 2
                 current_digit <= data_in(11 downto 8);
             when "10" =>
-                an <= "1101"; 
+                an <= "1101"; -- display 1
                 current_digit <= data_in(7 downto 4);
             when "11" =>
-                an <= "1110"; 
+                an <= "1110"; -- display 0
                 current_digit <= data_in(3 downto 0);
             when others =>
                 an <= "1111";

@@ -46,6 +46,7 @@ begin
     process(clk_in)
     begin
         if rising_edge(clk_in) then
+            -- 10 tics de reloj = 1 ciclo
             if clk_div_counter = 4 then
                 clk_10mhz <= not clk_10mhz;
                 clk_div_counter <= 0;
